@@ -1,3 +1,4 @@
+import os
 import sys
 import tqdm
 import logging
@@ -24,3 +25,10 @@ class TqdmLoggingHandler(logging.Handler):
             raise
         except Exception:
             self.handleError(record)
+
+def path_check(args):
+    if not os.path.exists(args.preprocess_path):
+        os.mkdir(preprocess_path)
+
+    if not os.path.exists(args.save_path):
+        os.mkdir(save_path)

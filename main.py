@@ -9,9 +9,13 @@ from utils import str2bool
 
 def main(args):
 
+    # Path setting
+    path_check(args)
+
     # Time setting
     total_start_time = time()
 
+    # Task run
     if args.preprocessing:
         preprocessing(args)
 
@@ -35,7 +39,7 @@ if __name__=='__main__':
     parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News'],
                         help='Dataset select; [IMDB, Yelp, DBPia, AG_News]')
     # Path setting
-    parser.add_argument('--data_path', default='/HDD/kyohoon/acl_workshop', type=str,
+    parser.add_argument('--data_path', default='/HDD/kyohoon/data', type=str,
                         help='Original data path')
     parser.add_argument('--preprocess_path', default='./preprocessing', type=str,
                         help='Preprocessed data  file path')

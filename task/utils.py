@@ -1,21 +1,24 @@
+import os
 import re
 import random
+import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
-def read_data(data_name: str):
+def read_data(data_name: str, data_path: str):
     """
     Remove html tags and special characters from given text
 
     Args:
         data_name (str): given dataset name
+        data_path (str): saved dataset path
     Returns:
         train_dat, test_dat (pd.DataFrame): loaded dataframe
     """
     if data_name == 'AG_News':
-        train_dat = pd.read_csv('./dataset/AG_News/train.csv', sep=',',
+        train_dat = pd.read_csv(os.path.join(data_path , 'AG_News/train.csv'), sep=',',
                                 names=['label', 'title', 'description'])
-        test_dat = pd.read_csv('./dataset/AG_News/test.csv', sep=',',
+        test_dat = pd.read_csv(os.path.join(data_path , 'AG_News/test.csv'), sep=',',
                                 names=['label', 'title', 'description'])
 
         train_dat['total_text'] = train_dat['title'] + '[SEP]' + train_dat['description']
@@ -23,27 +26,27 @@ def read_data(data_name: str):
         
 
     if data_name == 'DBPia':
-        train_dat = pd.read_csv('./dataset/DBPia/train.csv', sep=',',
+        train_dat = pd.read_csv(os.path.join(data_path , 'DBPia/train.csv'), sep=',',
                                 names=['label', 'title', 'description'])
-        test_dat = pd.read_csv('./dataset/DBPia/test.csv', sep=',',
+        test_dat = pd.read_csv(os.path.join(data_path , 'DBPia/test.csv'), sep=',',
                                 names=['label', 'title', 'description'])
 
         train_dat['total_text'] = train_dat['title'] + '[SEP]' + train_dat['description']
         test_dat['total_text'] = test_dat['title'] + '[SEP]' + test_dat['description']
 
     if data_name == 'IMDB':
-        train_dat = pd.read_csv('./dataset/IMDB/train.csv', sep='\t',
+        train_dat = pd.read_csv(os.path.join(data_path , 'IMDB/train.csv'), sep='\t',
                                 names=['label', 'description'])
-        test_dat = pd.read_csv('./dataset/IMDB/test.csv', sep='\t',
+        test_dat = pd.read_csv(os.path.join(data_path , 'IMDB/TEST.csv'), sep='\t',
                                 names=['label', 'description'])
 
         train_dat['total_text'] = train_dat['description']
         test_dat['total_text'] = test_dat['description']
 
     if data_name == 'Yelp_Full':
-        train_dat = pd.read_csv('./dataset/Yelp_Full/train.csv', sep=',',
+        train_dat = pd.read_csv(os.path.join(data_path , 'Yelp_Full/train.csv'), sep=',',
                                 names=['label', 'description'])
-        test_dat = pd.read_csv('./dataset/Yelp_Full/test.csv', sep=',',
+        test_dat = pd.read_csv(os.path.join(data_path , 'Yelp_Full/TEST.csv'), sep=',',
                                 names=['label', 'description'])
 
         train_dat['total_text'] = train_dat['description']

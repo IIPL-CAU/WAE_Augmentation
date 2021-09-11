@@ -1,3 +1,6 @@
+# path
 dataset/
 .ipynb_checkpoints/
+__pycache__/
+# Jupyter notebook
 *.ipynb
