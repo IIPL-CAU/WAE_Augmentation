@@ -7,11 +7,13 @@ from bs4 import BeautifulSoup
 
 def read_data(data_name: str, data_path: str):
     """
-    Remove html tags and special characters from given text
+    Load dataset and pre-processing.
+    (If the dataset consists of two text columns, combine them.)
 
     Args:
         data_name (str): given dataset name
         data_path (str): saved dataset path
+
     Returns:
         train_dat, test_dat (pd.DataFrame): loaded dataframe
     """
@@ -77,7 +79,7 @@ def clean_text(text: str):
     """
     cleantext = BeautifulSoup(text, "lxml").text
 
-    cleantext = re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', text, flags=re.MULTILINE) # Remove URL
+    cleantext = re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', cleantext, flags=re.MULTILINE) # Remove URL
     cleantext = re.sub('[^A-Za-z.,?!\']+', ' ', cleantext)
 
     cleantext = re.sub(r"\.+",". ", cleantext)

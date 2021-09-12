@@ -8,17 +8,17 @@ def preprocessing(args):
     """
     Build vocabulary using sentencepiece library from dataset csv file
 
-    Args:
-        dataset_path (str): path to dataset folder
+    Using args:
+        tokenizer (str): Tokenizer select; SentencePiece(spm) or BertTokenizer(BERT)
+        preprocess_path (str): pre-processed file saving path
         dataset (str): option for specific dataset to use 
-        data_column_index (int): column index of data to extract from dataset file
-        split_ratio (float): ratio between valid/test split
+        valid_split_ratio (float): ratio between train/valid split
         vocab_size (int): size of vocabulary
-        pad_id (int): id of padding token
-        unk_id (int): id of unknown token
-        bos_id (int): id of begin of sentence token
-        eos_id (int): id of end of sentence token
-        sentencepiece_model: sentencepiece model type
+        pad_idx (int): id of padding token
+        unk_idx (int): id of unknown token
+        bos_idx (int): id of begin of sentence token
+        eos_idx (int): id of end of sentence token
+        sentencepiece_model (str): sentencepiece model type
     """
 
     # Data Load
@@ -26,6 +26,12 @@ def preprocessing(args):
 
     # Data Split
     train_dat, valid_dat = train_valid_split(train_dat, args.valid_split_ratio)
+
+    # Data save in dictionary
+    encoded_dict = dict()
+    encoded_dict['train'] = dict()
+    encoded_dict['valid'] = dict()
+    encoded_dict['test'] = dict()
 
     # SentencePiece; spm
     if args.tokenizer == 'spm':
@@ -50,40 +56,56 @@ def preprocessing(args):
         word2id_dict = {w: i for i, w in enumerate(vocab_list)}
 
         # SentencePiece model load
-        sp_kr = spm.SentencePieceProcessor()
-        sp_kr.Load(f"{args.output_path}/m_spm.model")
+        spm_model = spm.SentencePieceProcessor()
+        spm_model.Load(f"{args.output_path}/m_spm.model")
 
         # Encoding
-        train_indices = tuple(
-            [args.bos_idx] + sp_kr.encode(
-                                korean, enable_sampling=True, alpha=0.1, nbest_size=-1, out_type=int) + \
-            [args.eos_idx] for korean in train_dat['total_text']
-        )
-        valid_indices = tuple(
-            [args.bos_idx] + sp_kr.encode(korean, out_type=int) + [args.eos_idx] for korean in valid_dat['total_text']
-        )
-        test_indices = tuple(
-            [args.bos_idx] + sp_kr.encode(korean, out_type=int) + [args.eos_idx] for korean in test_dat['total_text']
-        )
+        for text in train_dat['total_text']:
+            encoded_text = [args.bos_idx] + spm_model.encoder(
+                text, enable_sampling=True, alpha=0.1, nbest_size=-1, out_type=int) + \
+                    [args.eos_idx]
+            encoded_text = encoded_text + [args.pad_idx for _ range(args.max_len - len(encoded_text))]
+            encoded_dict['train']['input_ids'].append(encoded_text)
+        for text in valid_dat['total_text']:
+            encoded_text = [args.bos_idx] + spm_model.encoder(
+                text, out_type=int) + [args.eos_idx]
+            encoded_text = encoded_text + [args.pad_idx for _ range(args.max_len - len(encoded_text))]
+            encoded_dict['valid']['input_ids'].append(encoded_text)
+        for text in test_dat['total_text']:
+            encoded_text = [args.bos_idx] + spm_model.encoder(
+                text, out_type=int) + [args.eos_idx]
+            encoded_text = encoded_text + [args.pad_idx for _ range(args.max_len - len(encoded_text))]
+            encoded_dict['test']['input_ids'].append(encoded_text)
 
         # Segment encoding
-        train_segment, valid_segment, test_segment = list(), list(), list()
+        encoded_dict['train']['token_type_ids'] = list()
+        encoded_dict['valid']['token_type_ids'] = list()
+        encoded_dict['test']['token_type_ids'] = list()
 
-        for ind in train_indices:
-            train_segment.append([0 if i <= ind.index(4) else 1 for i in range(len(ind))])
-        for ind in valid_indices:
-            valid_segment.append([0 if i <= ind.index(4) else 1 for i in range(len(ind))])
-        for ind in test_indices:
-            test_segment.append([0 if i <= ind.index(4) else 1 for i in range(len(ind))])
+        for ind in encoded_dict['train']['input_ids']:
+            token_type_ids_ = [0 if i <= ind.index(4) else 1 for i in range(len(ind))]
+            token_type_ids_ = token_type_ids_ + [0 for _ range(args.max_len - len(ind))]
+            encoded_dict['train']['token_type_ids'].append(token_type_ids_)
+        for ind in encoded_dict['valid']['input_ids']:
+            token_type_ids_ = [0 if i <= ind.index(4) else 1 for i in range(len(ind))]
+            token_type_ids_ = token_type_ids_ + [0 for _ range(args.max_len - len(ind))]
+            encoded_dict['valid']['token_type_ids'].append(token_type_ids_)
+        for ind in encoded_dict['test']['input_ids']:
+            token_type_ids_ = [0 if i <= ind.index(4) else 1 for i in range(len(ind))]
+            token_type_ids_ = token_type_ids_ + [0 for _ range(args.max_len - len(ind))]
+            encoded_dict['test']['token_type_ids'].append(token_type_ids_)
 
         # Attention mask encoding
-        train_attention_mask, valid_attention_mask, test_attention_mask = list(), list(), list()
-        for ind in train_indices:
-            train_attention_mask.append([1 if i <= ind.index(args.eos_idx) else 0 for i in range(len(ind))])
-        for ind in valid_indices:
-            valid_attention_mask.append([1 if i <= ind.index(args.eos_idx) else 0 for i in range(len(ind))])
-        for ind in test_indices:
-            test_attention_mask.append([1 if i <= ind.index(args.eos_idx) else 0 for i in range(len(ind))])
+        encoded_dict['train']['attention_mask'] = list()
+        encoded_dict['valid']['attention_mask'] = list()
+        encoded_dict['test']['attention_mask'] = list()
+
+        for ind in encoded_dict['train']['input_ids']:
+            encoded_dict['train']['attention_mask'].append([1 if i <= ind.index(args.eos_idx) else 0 for i in range(args.max_len)])
+        for ind in encoded_dict['valid']['input_ids']:
+            encoded_dict['valid']['attention_mask'].append([1 if i <= ind.index(args.eos_idx) else 0 for i in range(args.max_len)])
+        for ind in encoded_dict['test']['input_ids']:
+            encoded_dict['test']['attention_mask'].append([1 if i <= ind.index(args.eos_idx) else 0 for i in range(args.max_len)])
 
     # BERT Tokenizer; BERT
     if args.tokenizer == 'BERT':
@@ -93,16 +115,52 @@ def preprocessing(args):
 
         # Tokenizing
         if len(train_dat.column) > 2:
-            encoded_dict = tokenizer(
+            # Train data
+            encoded_dict['train'] = tokenizer(
                 train_dat['title'].tolist(),
                 train_dat['description'].tolist(),
                 max_length=args.max_len,
                 padding='max_length',
                 truncation=True
             )
+
+            # Validation data
+            encoded_dict['valid'] = tokenizer(
+                valid_dat['title'].tolist(),
+                valid_dat['description'].tolist(),
+                max_length=args.max_len,
+                padding='max_length',
+                truncation=True
+            )
+
+            # Test data
+            encoded_dict['test'] = tokenizer(
+                test_dat['title'].tolist(),
+                test_dat['description'].tolist(),
+                max_length=args.max_len,
+                padding='max_length',
+                truncation=True
+            )
         else:
-            encoded_dict = tokenizer(
+            # Train data
+            encoded_dict['train'] = tokenizer(
                 train_dat['description'].tolist(),
+                max_length=args.max_len,
+                padding='max_length',
+                truncation=True
+            )
+
+            # Validation data
+            encoded_dict['valid'] = tokenizer(
+                valid_dat['description'].tolist(),
+                max_length=args.max_len,
+                padding='max_length',
+                truncation=True
+            )
+
+            # Test data
+            encoded_dict['test'] = tokenizer(
+                test_dat['description'].tolist(),
                 max_length=args.max_len,
                 padding='max_length',
                 truncation=True
@@ -112,6 +170,18 @@ def preprocessing(args):
     with open(f'{args.preprocess_path}/{args.dataset}_{args.tokenizer}_preprocessed.pkl', 'wb') as f:
         pickle.dump({
             'train': {
-                'input_ids': 
+                'input_ids': encoded_dict['train']['input_ids'],
+                'token_type_ids': encoded_dict['train']['token_type_ids'],
+                'attention_mask': encoded_dict['train']['attention_mask']
+            },
+            'valid': {
+                'input_ids': encoded_dict['valid']['input_ids'],
+                'token_type_ids': encoded_dict['valid']['token_type_ids'],
+                'attention_mask': encoded_dict['valid']['attention_mask']
+            },
+            'test': {
+                'input_ids': encoded_dict['test']['input_ids'],
+                'token_type_ids': encoded_dict['test']['token_type_ids'],
+                'attention_mask': encoded_dict['test']['attention_mask']
             }
         }, f)

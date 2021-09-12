@@ -3,7 +3,17 @@ import sys
 import tqdm
 import logging
 
+def path_check(args):
+    if not os.path.exists(args.preprocess_path):
+        os.mkdir(preprocess_path)
+
+    if not os.path.exists(args.save_path):
+        os.mkdir(save_path)
+
 class TqdmLoggingHandler(logging.Handler):
+    """
+    tqdm logger setting
+    """
     def __init__(self, level=logging.DEBUG):
         super().__init__(level)
         self.stream = sys.stdout
@@ -25,10 +35,3 @@ class TqdmLoggingHandler(logging.Handler):
             raise
         except Exception:
             self.handleError(record)
-
-def path_check(args):
-    if not os.path.exists(args.preprocess_path):
-        os.mkdir(preprocess_path)
-
-    if not os.path.exists(args.save_path):
-        os.mkdir(save_path)
