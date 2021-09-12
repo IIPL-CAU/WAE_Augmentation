@@ -1,2 +1,15 @@
-# WAE_Augmnetation
-WAE_Augmnetation
+# Text Style Transfer & Augmentation with WAE (Wasserstein Auto-Encoder)
+
+### Pre-processing
+
+```
+python3 main.py --preprocessing --dataset=IMDB
+```
+
+**These arguments must be provided**
+- dataset: Name of a directory below dataset_path, which contations train.csv and test.csv
+
+**Additional arguments**
+
+
+**After execution, These files will be generated**
