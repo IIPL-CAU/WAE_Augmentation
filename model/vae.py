@@ -1,10 +1,37 @@
-import random
-
 import torch
 import torch.nn as nn
 import torch.nn.utils.rnn as rnn_utils
 import torch.nn.functional as F
 
+class Encoder(nn.Module):
+    def __init__(self, d_model: int=512, d_latent: int=64, device=None):
+        """Initialize model
+
+        Args:
+            d_model (int): model dimension
+            d_latent (int): latent space dimension
+
+        """
+        self.d_model = d_model
+        self.d_latent = d_latent
+        self.device = device
+
+    def reparameterize(self, mean, log_var):
+        """Sample latent vector z from mean and log variance
+        
+        Args:
+            mean (torch.Tensor): mean of latent vector
+            log_var (torch.Tensor): log variance of latent vector
+        Return:
+            z (torch.Tensor): sampled latent vector
+        """
+        batch_size = mean.size(0)
+
+        std = torch.exp(0.5 * log_var)
+        eps = torch.randn([batch_size, self.latent_size]).to(self.device)
+        z = eps * std + mean
+
+        return z
 
 class GeneratorVAE(nn.Module):
     def __init__(self, spm_model, batch_size, vocab_size=12004, embed_size=512, hidden_size=256, latent_size=32, num_layers=1,

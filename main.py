@@ -46,20 +46,22 @@ if __name__=='__main__':
     parser.add_argument('--save_path', default='/HDD/kyohoon/model_checkpoint/hate_speech/', type=str,
                         help='Model checkpoint file path')
     # Preprocessing setting
+    parser.add_argument('--tokenizer', default='BERT', type=str, choices=['BERT', 'spm'],
+                        help='Tokenizer settings; Default is BERT')
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
-    parser.add_argument('--src_vocab_size', default=8000, type=int, 
+    parser.add_argument('--vocab_size', default=8000, type=int, 
                         help='Source language vocabulary size; Default is 8000')
-    parser.add_argument('--trg_vocab_size', default=8000, type=int, 
-                        help='Target language vocabulary size; Default is 8000')
-    parser.add_argument('--pad_id', default=0, type=int,
+    parser.add_argument('--pad_idx', default=0, type=int,
                         help='Padding token index; Default is 0')
-    parser.add_argument('--unk_id', default=3, type=int,
+    parser.add_argument('--unk_idx', default=3, type=int,
                         help='Unknown token index; Default is 3')
-    parser.add_argument('--bos_id', default=1, type=int,
+    parser.add_argument('--bos_idx', default=1, type=int,
                         help='Padding token index; Default is 1')
-    parser.add_argument('--eos_id', default=2, type=int,
+    parser.add_argument('--eos_idx', default=2, type=int,
                         help='Padding token index; Default is 2')
+    parser.add_argument('--max_len', default=300, type=int,
+                        help='Maximum length of sequence; Default is 300')
     # Model setting
     parser.add_argument('--parallel', default=True, type=str2bool,
                         help='PTransformer option; Default is True')
