@@ -33,6 +33,11 @@ def preprocessing(args):
     encoded_dict['valid'] = dict()
     encoded_dict['test'] = dict()
 
+    # Label setting
+    encoded_dict['train']['label'] = train_dat['label']
+    encoded_dict['valid']['label'] = valid_dat['label']
+    encoded_dict['test']['label'] = test_dat['label']
+
     # SentencePiece; spm
     if args.tokenizer == 'spm':
 
@@ -172,16 +177,19 @@ def preprocessing(args):
             'train': {
                 'input_ids': encoded_dict['train']['input_ids'],
                 'token_type_ids': encoded_dict['train']['token_type_ids'],
-                'attention_mask': encoded_dict['train']['attention_mask']
+                'attention_mask': encoded_dict['train']['attention_mask'],
+                'label': encoded_dict['train']['label']
             },
             'valid': {
                 'input_ids': encoded_dict['valid']['input_ids'],
                 'token_type_ids': encoded_dict['valid']['token_type_ids'],
-                'attention_mask': encoded_dict['valid']['attention_mask']
+                'attention_mask': encoded_dict['valid']['attention_mask'],
+                'label': encoded_dict['valid']['label']
             },
             'test': {
                 'input_ids': encoded_dict['test']['input_ids'],
                 'token_type_ids': encoded_dict['test']['token_type_ids'],
-                'attention_mask': encoded_dict['test']['attention_mask']
+                'attention_mask': encoded_dict['test']['attention_mask'],
+                'label': encoded_dict['test']['label']
             }
         }, f)
