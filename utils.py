@@ -36,6 +36,10 @@ class TqdmLoggingHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
+def write_log(logger, message):
+    if logger:
+        logger.info(message)
+
 def str2bool(v): 
     if isinstance(v, bool): 
         return v 

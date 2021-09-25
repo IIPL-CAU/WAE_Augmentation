@@ -1,8 +1,10 @@
 import pickle
+import logging
 import sentencepiece as spm
 from transformers import BertTokenizer
 
 from task.utils import read_data, train_valid_split
+from utils import TqdmLoggingHandler
 
 def preprocessing(args):
     """
@@ -20,6 +22,16 @@ def preprocessing(args):
         eos_idx (int): id of end of sentence token
         sentencepiece_model (str): sentencepiece model type
     """
+
+    # Logger setting
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    handler = TqdmLoggingHandler()
+    handler.setFormatter(logging.Formatter(" %(asctime)s - %(message)s"))
+    logger.addHandler(handler)
+    logger.propagate = False
+
+    write_log(logger, "Pre-processing Start")
 
     # Data Load
     train_dat, test_dat = read_data(args.dataset)
