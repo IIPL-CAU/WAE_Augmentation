@@ -17,6 +17,7 @@ def read_data(data_name: str, data_path: str):
     Returns:
         train_dat, test_dat (pd.DataFrame): loaded dataframe
     """
+
     if data_name == 'AG_News':
         train_dat = pd.read_csv(os.path.join(data_path , 'AG_News/train.csv'), sep=',',
                                 names=['label', 'title', 'description'])
@@ -37,10 +38,10 @@ def read_data(data_name: str, data_path: str):
         test_dat['total_text'] = test_dat['title'] + '[SEP]' + test_dat['description']
 
     if data_name == 'IMDB':
-        train_dat = pd.read_csv(os.path.join(data_path , 'IMDB/train.csv'), sep='\t',
-                                names=['label', 'description'])
-        test_dat = pd.read_csv(os.path.join(data_path , 'IMDB/TEST.csv'), sep='\t',
-                                names=['label', 'description'])
+        train_dat = pd.read_csv(os.path.join(data_path , 'IMDB/train.csv'), sep=',',
+                                header=0, names=['description', 'label'])
+        test_dat = pd.read_csv(os.path.join(data_path , 'IMDB/test.csv'), sep=',',
+                                header=0, names=['description', 'label'])
 
         train_dat['total_text'] = train_dat['description']
         test_dat['total_text'] = test_dat['description']
@@ -48,7 +49,7 @@ def read_data(data_name: str, data_path: str):
     if data_name == 'Yelp_Full':
         train_dat = pd.read_csv(os.path.join(data_path , 'Yelp_Full/train.csv'), sep=',',
                                 names=['label', 'description'])
-        test_dat = pd.read_csv(os.path.join(data_path , 'Yelp_Full/TEST.csv'), sep=',',
+        test_dat = pd.read_csv(os.path.join(data_path , 'Yelp_Full/test.csv'), sep=',',
                                 names=['label', 'description'])
 
         train_dat['total_text'] = train_dat['description']
@@ -89,3 +90,7 @@ def clean_text(text: str):
     cleantext = re.sub("\s+"," ", cleantext)
 
     return cleantext
+
+def write_log(logger, message):
+    if logger:
+        logger.info(message)

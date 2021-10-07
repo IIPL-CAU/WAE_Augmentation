@@ -36,10 +36,8 @@ class PadCollate:
             pad_size[dim] = max_len - vec.size(dim)
             return torch.cat([vec, torch.LongTensor(*pad_size).fill_(self.pad_index)], dim=dim)
 
-        def pack_sentence(sentences, masking=False):
+        def pack_sentence(sentences):
             sentences_len = max(map(lambda x: len(x), sentences))
-            if masking:
-                sentences = masking_sentences(sentences)
             sentences = [pad_tensor(torch.LongTensor(seq), sentences_len, self.dim) for seq in sentences]
             sentences = torch.cat(sentences)
             sentences = sentences.view(-1, sentences_len)

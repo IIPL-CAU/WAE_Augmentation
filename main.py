@@ -3,9 +3,9 @@ from time import time
 
 # Import custom modules
 from task.preprocessing import preprocessing
-from task.training import training
-from task.testing import testing
-from utils import str2bool
+# from task.training import training
+# from task.testing import testing
+from utils import str2bool, path_check
 
 def main(args):
 
@@ -19,11 +19,11 @@ def main(args):
     if args.preprocessing:
         preprocessing(args)
 
-    if args.training:
-        training(args)
+    # if args.training:
+    #     training(args)
 
-    if args.testing:
-        testing(args)
+    # if args.testing:
+    #     testing(args)
 
     # Time calculate
     print(f'Done! ; {round((time()-total_start_time)/60, 3)}min spend')
@@ -39,17 +39,19 @@ if __name__=='__main__':
     parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News'],
                         help='Dataset select; [IMDB, Yelp, DBPia, AG_News]')
     # Path setting
-    parser.add_argument('--data_path', default='/HDD/kyohoon/data', type=str,
+    parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
                         help='Original data path')
     parser.add_argument('--preprocess_path', default='./preprocessing', type=str,
                         help='Preprocessed data  file path')
-    parser.add_argument('--save_path', default='/HDD/kyohoon/model_checkpoint/hate_speech/', type=str,
+    parser.add_argument('--save_path', default='/HDD/kyohoon/model_checkpoint/WAE/', type=str,
                         help='Model checkpoint file path')
     # Preprocessing setting
     parser.add_argument('--tokenizer', default='BERT', type=str, choices=['BERT', 'spm'],
                         help='Tokenizer settings; Default is BERT')
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
+    parser.add_argument('--valid_split_ratio', default=0.2, type=float,
+                        help='Validation dataset split ratio; Default is 0.2')
     parser.add_argument('--vocab_size', default=8000, type=int, 
                         help='Source language vocabulary size; Default is 8000')
     parser.add_argument('--pad_idx', default=0, type=int,

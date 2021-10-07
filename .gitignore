@@ -2,5 +2,6 @@
 dataset/
 .ipynb_checkpoints/
 __pycache__/
+preprocessing/
 # Jupyter notebook
 *.ipynb

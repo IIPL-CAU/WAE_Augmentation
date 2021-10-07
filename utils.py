@@ -5,10 +5,10 @@ import logging
 
 def path_check(args):
     if not os.path.exists(args.preprocess_path):
-        os.mkdir(preprocess_path)
+        os.mkdir(args.preprocess_path)
 
     if not os.path.exists(args.save_path):
-        os.mkdir(save_path)
+        os.mkdir(args.save_path)
 
 class TqdmLoggingHandler(logging.Handler):
     """
