@@ -59,8 +59,8 @@ def augmenting(args):
         'train': CustomDataset(tokenizer=args.tokenizer, input_ids_list=train_input_ids,
                                label_list=train_label, attention_mask_list=train_attention_mask,
                                token_type_ids_list=train_token_type_ids, min_len=4, max_len=512),
-        'valid': CustomDataset(tokenizer=args.tokenizer, input_ids_list=train_input_ids,
-                               label_list=train_label, attention_mask_list=train_attention_mask,
+        'valid': CustomDataset(tokenizer=args.tokenizer, input_ids_list=valid_input_ids,
+                               label_list=valid_label, attention_mask_list=valid_attention_mask,
                                token_type_ids_list=valid_token_type_ids, min_len=4, max_len=512)
     }
     dataloader_dict = {
