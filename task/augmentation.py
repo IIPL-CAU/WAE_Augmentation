@@ -63,8 +63,11 @@ def augmenting(args):
                                token_type_ids_list=valid_token_type_ids, min_len=4, max_len=512)
     }
     dataloader_dict = {
-        'train': DataLoader(dataset_dict['train'], collate_fn=PadCollate(args.tokenizer), drop_last=False,
+        'train': DataLoader(dataset_dict['train'], collate_fn=PadCollate(args.tokenizer), drop_last=True,
                             batch_size=args.batch_size, shuffle=True, pin_memory=True,
+                            num_workers=args.num_workers),
+        'train': DataLoader(dataset_dict['valid'], collate_fn=PadCollate(args.tokenizer), drop_last=False,
+                            batch_size=args.batch_size, shuffle=False, pin_memory=True,
                             num_workers=args.num_workers)
     }
 
@@ -125,7 +128,6 @@ def augmenting(args):
             # Input, output setting
             input_ids = input_ids.to(device, non_blocking=True)
             attention_mask = attention_mask.to(device, non_blocking=True)
-            # label = label.to(device, non_blocking=True)
 
             # Model
             enc_out, z_tilde, ae_hidden, dec_out = model(input_ids, attention_mask)
@@ -171,11 +173,11 @@ def augmenting(args):
         val_acc = 0
 
         with torch.no_grad():
-            for i, (img, label) in enumerate(dataloader_dict['valid']):
+            for i, (input_ids, attention_mask, label) in enumerate(dataloader_dict['valid']):
 
                 # Input, output setting
-                img = img.to(device, non_blocking=True)
-                label = label.to(device, non_blocking=True)
+                input_ids = input_ids.to(device, non_blocking=True)
+                attention_mask = attention_mask.to(device, non_blocking=True)
 
                 # Model
                 enc_out, z_tilde, ae_hidden, dec_out = model(input_ids, attention_mask)
@@ -193,6 +195,14 @@ def augmenting(args):
                 acc = acc.item() * 100
                 val_loss += total_loss.item()
                 val_acc += acc
+
+        # Show Example
+        original_sent = tokenizer.batch_decode(input_ids, skip_special_tokens=True)
+        generated_sent = tokenizer.batch_decode(dec_out.max(dim=2)[1], skip_special_tokens=True)
+        write_log(logger, 'Original Sentence:')
+        write_log(logger, original_sent)
+        write_log(logger, 'Generated Sentence:')
+        write_log(logger, generated_sent)
 
         val_loss /= len(dataloader_dict['valid'])
         val_acc /= len(dataloader_dict['valid'])

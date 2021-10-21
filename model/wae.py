@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn as nn
 # Import Huggingface
-from transformers import T5ForConditionalGeneration
+from transformers import T5ForConditionalGeneration, BertTokenizer, T5Tokenizer
 
 class TransformerWAE(nn.Module):
     def __init__(self, d_hidden, d_latent):
@@ -25,6 +25,7 @@ class TransformerWAE(nn.Module):
         self.d_latent = d_latent
         self.d_hidden = d_hidden
 
+        self.tokenizer = T5Tokenizer.from_pretrained("t5-base")
         self.model = T5ForConditionalGeneration.from_pretrained('t5-base')
         self.vocab_size = self.model.lm_head.out_features
 
@@ -47,6 +48,15 @@ class TransformerWAE(nn.Module):
         dec_out = self.model.lm_head(dec_out['last_hidden_state'])
 
         return enc_out, z, ae_hidden, dec_out
+
+    def predict(self, input_ids, attention_mask):
+        emb_ = self.model.shared(input_ids)
+        enc_out = self.model.encoder(inputs_embeds = emb_, attention_mask = attention_mask)
+
+        # Wasserstein Auto-encoder
+        z = self.hidden2latent(enc_out['last_hidden_state'])
+        ae_hidden = self.latent2hidden(z)
+
 
 def sample_z(args, n_sample=None, dim=None, sigma=None, template=None):
     if n_sample is None:
