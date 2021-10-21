@@ -3,6 +3,7 @@ import os
 import time
 import pickle
 import logging
+from tqdm import tqdm
 # Import PyTorch
 import torch
 import torch.nn as nn
@@ -66,7 +67,7 @@ def augmenting(args):
         'train': DataLoader(dataset_dict['train'], collate_fn=PadCollate(args.tokenizer), drop_last=True,
                             batch_size=args.batch_size, shuffle=True, pin_memory=True,
                             num_workers=args.num_workers),
-        'train': DataLoader(dataset_dict['valid'], collate_fn=PadCollate(args.tokenizer), drop_last=False,
+        'valid': DataLoader(dataset_dict['valid'], collate_fn=PadCollate(args.tokenizer), drop_last=False,
                             batch_size=args.batch_size, shuffle=False, pin_memory=True,
                             num_workers=args.num_workers)
     }
@@ -116,7 +117,7 @@ def augmenting(args):
         start_time_e = time.time()
         model = model.train()
 
-        for i, (input_ids, attention_mask, label) in enumerate(dataloader_dict['train']):
+        for i, (input_ids, attention_mask, label) in enumerate(tqdm(dataloader_dict['train'])):
 
             #===================================#
             #============Train Epoch============#
@@ -154,9 +155,9 @@ def augmenting(args):
             # Print loss value only training
             acc = sum(input_ids.view(-1) == dec_out.view(-1, dec_out.size(-1)).max(dim=1)[1]) / len(input_ids.view(-1))
             acc = acc.item() * 100
-            if i == 0 or freq == args.print_freq or i==len(dataloader_dict['train']):
+            if i == 0 or freq == args.print_freq or i==len(dataloader_dict['train'])-1:
                 batch_log = "[Epoch:%d][%d/%d] train_recon_loss:%2.3f | train_mmd_loss:%2.3f | train_acc:%02.2f | learning_rate:%3.6f | spend_time:%3.2fmin" \
-                        % (epoch+1, i, len(dataloader_dict['train']), 
+                        % (epoch+1, i+1, len(dataloader_dict['train']), 
                         recon_loss.item(), mmd_loss.item(), acc, optimizer.param_groups[0]['lr'], 
                         (time.time() - start_time_e) / 60)
                 write_log(logger, batch_log)
@@ -173,7 +174,7 @@ def augmenting(args):
         val_acc = 0
 
         with torch.no_grad():
-            for i, (input_ids, attention_mask, label) in enumerate(dataloader_dict['valid']):
+            for i, (input_ids, attention_mask, label) in enumerate(tqdm(dataloader_dict['valid'])):
 
                 # Input, output setting
                 input_ids = input_ids.to(device, non_blocking=True)
@@ -197,8 +198,8 @@ def augmenting(args):
                 val_acc += acc
 
         # Show Example
-        original_sent = tokenizer.batch_decode(input_ids, skip_special_tokens=True)
-        generated_sent = tokenizer.batch_decode(dec_out.max(dim=2)[1], skip_special_tokens=True)
+        original_sent = model.tokenizer.batch_decode(input_ids, skip_special_tokens=True)
+        generated_sent = model.tokenizer.batch_decode(dec_out.max(dim=2)[1], skip_special_tokens=True)
         write_log(logger, 'Original Sentence:')
         write_log(logger, original_sent)
         write_log(logger, 'Generated Sentence:')
