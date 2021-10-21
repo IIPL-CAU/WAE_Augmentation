@@ -4,31 +4,41 @@ import torch
 from torch.utils.data.dataset import Dataset
 
 class CustomDataset(Dataset):
-    def __init__(self, comment_list, label_list, min_len=4, max_len=512):
+    def __init__(self, tokenizer: str, input_ids_list: list, label_list: list,
+                 attention_mask_list: list, token_type_ids_list: list = None, 
+                 min_len: int = 4, max_len: int = 512):
         data = []
-        exception_count = 0
-        for comment, label in zip(comment_list, label_list):
-            if min_len <= len(comment) <= max_len:
-                data.append((comment, label))
-            else:
-                exception_count += 1
+        if tokenizer == 'T5':
+            for i, a, l in zip(input_ids_list, attention_mask_list, label_list):
+                if min_len <= len(i) <= max_len:
+                    data.append((i, a, l))
+        else:
+            for i, t, a, l in zip(input_ids_list, token_type_ids_list, 
+                                  attention_mask_list, label_list):
+                if min_len <= len(i) <= max_len:
+                    data.append((i, t, a, l))
         
+        self.tokenizer = tokenizer
         self.data = tuple(data)
         self.num_data = len(self.data)
-        print(f'Exception by minimum and maximum length: {exception_count}')
         
     def __getitem__(self, index):
-        comment, label = self.data[index]
-        return comment, label
+        if self.tokenizer == 'T5':
+            id_, attention_, label_ = self.data[index]
+            return id_, attention_, label_
+        else:
+            id_, token_type_, attention_, label_ = self.data[index]
+            return id_, token_type_, attention_, label_
     
     def __len__(self):
         return self.num_data
 
 class PadCollate:
-    def __init__(self, pad_index=0, sep_index=3, dim=0):
+    def __init__(self, tokenizer, pad_index=0, sep_index=3, dim=0):
         self.dim = dim
         self.pad_index = pad_index
         self.sep_index = sep_index
+        self.tokenizer = tokenizer
 
     def pad_collate(self, batch):
         def pad_tensor(vec, max_len, dim):
@@ -43,8 +53,15 @@ class PadCollate:
             sentences = sentences.view(-1, sentences_len)
             return sentences
         
-        comment, label = zip(*batch)
-        return  pack_sentence(comment), torch.LongTensor(label)
+        out_ = zip(*batch)
+        if self.tokenizer == 'T5':
+            id_, attention_, label_ = out_
+            return pack_sentence(id_), \
+                pack_sentence(attention_), torch.LongTensor(label_)
+        else:
+            id_, token_type_, attention_, label_ = out_
+            return pack_sentence(id_), pack_sentence(token_type_), \
+                pack_sentence(attention_), torch.LongTensor(label_)
         
     def __call__(self, batch):
         return self.pad_collate(batch)

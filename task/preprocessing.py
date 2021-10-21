@@ -1,7 +1,7 @@
 import pickle
 import logging
 import sentencepiece as spm
-from transformers import BertTokenizer
+from transformers import BertTokenizer, T5Tokenizer
 
 from task.utils import read_data, train_valid_split
 from utils import TqdmLoggingHandler, write_log
@@ -34,7 +34,7 @@ def preprocessing(args):
     write_log(logger, "Pre-processing Start")
 
     # Data Load
-    train_dat, test_dat = read_data(args.dataset, args.data_path)
+    train_dat, test_dat, label_dict = read_data(args.dataset, args.data_path)
 
     # Data Split
     train_dat, valid_dat = train_valid_split(train_dat, args.valid_split_ratio)
@@ -44,6 +44,8 @@ def preprocessing(args):
     encoded_dict['train'] = dict()
     encoded_dict['valid'] = dict()
     encoded_dict['test'] = dict()
+
+    write_log(logger, "Tokenizing Start")
 
     # SentencePiece; spm
     if args.tokenizer == 'spm':
@@ -124,11 +126,14 @@ def preprocessing(args):
         encoded_dict['valid']['label'] = valid_dat['label']
         encoded_dict['test']['label'] = test_dat['label']
 
-    # BERT Tokenizer; BERT
-    if args.tokenizer == 'BERT':
+    # Huggingface
+    else:
 
         # Load pre-trained tokenizer
-        tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+        if args.tokenizer == 'BERT':
+            tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+        if args.tokenizer == 'T5':
+            tokenizer = T5Tokenizer.from_pretrained("t5-base")
 
         # Tokenizing
         if len(train_dat.columns) > 3:
@@ -189,24 +194,49 @@ def preprocessing(args):
         encoded_dict['test']['label'] = test_dat['label']
 
     # Saving
-    with open(f'{args.preprocess_path}/{args.dataset}_{args.tokenizer}_preprocessed.pkl', 'wb') as f:
-        pickle.dump({
-            'train': {
-                'input_ids': encoded_dict['train']['input_ids'],
-                'token_type_ids': encoded_dict['train']['token_type_ids'],
-                'attention_mask': encoded_dict['train']['attention_mask'],
-                'label': encoded_dict['train']['label']
-            },
-            'valid': {
-                'input_ids': encoded_dict['valid']['input_ids'],
-                'token_type_ids': encoded_dict['valid']['token_type_ids'],
-                'attention_mask': encoded_dict['valid']['attention_mask'],
-                'label': encoded_dict['valid']['label']
-            },
-            'test': {
-                'input_ids': encoded_dict['test']['input_ids'],
-                'token_type_ids': encoded_dict['test']['token_type_ids'],
-                'attention_mask': encoded_dict['test']['attention_mask'],
-                'label': encoded_dict['test']['label']
-            }
-        }, f)
+    write_log(logger, "Saving Start")
+
+    if args.tokenizer == 'T5':
+        with open(f'{args.preprocess_path}/{args.dataset}_{args.tokenizer}_preprocessed.pkl', 'wb') as f:
+            pickle.dump({
+                'train': {
+                    'input_ids': encoded_dict['train']['input_ids'],
+                    'attention_mask': encoded_dict['train']['attention_mask'],
+                    'label': encoded_dict['train']['label']
+                },
+                'valid': {
+                    'input_ids': encoded_dict['valid']['input_ids'],
+                    'attention_mask': encoded_dict['valid']['attention_mask'],
+                    'label': encoded_dict['valid']['label']
+                },
+                'test': {
+                    'input_ids': encoded_dict['test']['input_ids'],
+                    'attention_mask': encoded_dict['test']['attention_mask'],
+                    'label': encoded_dict['test']['label']
+                },
+                'label_dict': label_dict
+            }, f)
+
+    else:
+        with open(f'{args.preprocess_path}/{args.dataset}_{args.tokenizer}_preprocessed.pkl', 'wb') as f:
+            pickle.dump({
+                'train': {
+                    'input_ids': encoded_dict['train']['input_ids'],
+                    'token_type_ids': encoded_dict['train']['token_type_ids'],
+                    'attention_mask': encoded_dict['train']['attention_mask'],
+                    'label': encoded_dict['train']['label']
+                },
+                'valid': {
+                    'input_ids': encoded_dict['valid']['input_ids'],
+                    'token_type_ids': encoded_dict['valid']['token_type_ids'],
+                    'attention_mask': encoded_dict['valid']['attention_mask'],
+                    'label': encoded_dict['valid']['label']
+                },
+                'test': {
+                    'input_ids': encoded_dict['test']['input_ids'],
+                    'token_type_ids': encoded_dict['test']['token_type_ids'],
+                    'attention_mask': encoded_dict['test']['attention_mask'],
+                    'label': encoded_dict['test']['label']
+                },
+                'label_dict': label_dict
+            }, f)

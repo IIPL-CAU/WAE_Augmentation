@@ -24,15 +24,26 @@ def read_data(data_name: str, data_path: str):
         test_dat = pd.read_csv(os.path.join(data_path , 'AG_News/test.csv'), sep=',',
                                 names=['label', 'title', 'description'])
 
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
+
         train_dat['total_text'] = train_dat['title'] + '[SEP]' + train_dat['description']
         test_dat['total_text'] = test_dat['title'] + '[SEP]' + test_dat['description']
-        
 
     if data_name == 'DBPia':
         train_dat = pd.read_csv(os.path.join(data_path , 'DBPia/train.csv'), sep=',',
                                 names=['label', 'title', 'description'])
         test_dat = pd.read_csv(os.path.join(data_path , 'DBPia/test.csv'), sep=',',
                                 names=['label', 'title', 'description'])
+
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
 
         train_dat['total_text'] = train_dat['title'] + '[SEP]' + train_dat['description']
         test_dat['total_text'] = test_dat['title'] + '[SEP]' + test_dat['description']
@@ -43,6 +54,12 @@ def read_data(data_name: str, data_path: str):
         test_dat = pd.read_csv(os.path.join(data_path , 'IMDB/test.csv'), sep=',',
                                 header=0, names=['description', 'label'])
 
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
+
         train_dat['total_text'] = train_dat['description']
         test_dat['total_text'] = test_dat['description']
 
@@ -51,11 +68,16 @@ def read_data(data_name: str, data_path: str):
                                 names=['label', 'description'])
         test_dat = pd.read_csv(os.path.join(data_path , 'Yelp_Full/test.csv'), sep=',',
                                 names=['label', 'description'])
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
 
         train_dat['total_text'] = train_dat['description']
         test_dat['total_text'] = test_dat['description']
 
-    return train_dat, test_dat
+    return train_dat, test_dat, label_dict
 
 def train_valid_split(dataframe_: pd.DataFrame, valid_split_ratio: float):
     total_length = len(dataframe_)

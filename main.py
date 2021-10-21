@@ -3,6 +3,7 @@ from time import time
 
 # Import custom modules
 from task.preprocessing import preprocessing
+from task.augmentation import augmenting
 # from task.training import training
 # from task.testing import testing
 from utils import str2bool, path_check
@@ -19,6 +20,9 @@ def main(args):
     if args.preprocessing:
         preprocessing(args)
 
+    if args.augmenting:
+        augmenting(args)
+
     # if args.training:
     #     training(args)
 
@@ -32,6 +36,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Parsing Method')
     # Task setting
     parser.add_argument('--preprocessing', action='store_true')
+    parser.add_argument('--augmenting', action='store_true')
     parser.add_argument('--training', action='store_true')
     parser.add_argument('--testing', action='store_true')
     parser.add_argument('--resume', action='store_true')
@@ -46,8 +51,8 @@ if __name__=='__main__':
     parser.add_argument('--save_path', default='/HDD/kyohoon/model_checkpoint/WAE/', type=str,
                         help='Model checkpoint file path')
     # Preprocessing setting
-    parser.add_argument('--tokenizer', default='BERT', type=str, choices=['BERT', 'spm'],
-                        help='Tokenizer settings; Default is BERT')
+    parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm'],
+                        help='Tokenizer settings; Default is T5')
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
     parser.add_argument('--valid_split_ratio', default=0.2, type=float,
@@ -95,6 +100,11 @@ if __name__=='__main__':
                         help="Share weight between source and target embedding; Default is True")
     parser.add_argument('--clip_grad_norm', default=5, type=int, 
                         help='Graddient clipping norm; Default is 5')
+    # WAE setting
+    parser.add_argument('--z_var', default=2, type=int,
+                        help='Default is 2')
+    parser.add_argument('--loss_lambda', default=100, type=int,
+                        help='MMD loss lambda; Default is 100')
     # Training setting
     parser.add_argument('--min_len', default=4, type=int,
                         help='Minimum length of sequences; Default is 4')
@@ -108,13 +118,15 @@ if __name__=='__main__':
                         help='Batch size; Default is 16')
     parser.add_argument('--num_epochs', default=100, type=int, 
                         help='Epoch count; Default is 100=300')
-    parser.add_argument('--max_lr', default=1e-5, type=float,
+    parser.add_argument('--lr', default=1e-5, type=float,
                         help='Maximum learning rate of warmup scheduler; Default is 5e-5')
     parser.add_argument('--w_decay', default=1e-5, type=float,
                         help="Ralamb's weight decay; Default is 1e-5")
     # Optimizer & LR_Scheduler setting
-    optim_list = ['AdamW', 'Adam', 'SGD']
+    optim_list = ['AdamW', 'Adam', 'SGD', 'Ralamb']
     scheduler_list = ['constant', 'warmup', 'reduce_train', 'reduce_valid', 'lambda']
+    parser.add_argument('--optimizer', default='AdamW', type=str, choices=optim_list,
+                        help="Choose optimizer setting in 'AdamW', 'Adam', 'SGD', 'Ralamb'; Default is AdamW")
     parser.add_argument('--scheduler', default='constant', type=str, choices=scheduler_list,
                         help="Choose optimizer setting in 'constant', 'warmup', 'reduce'; Default is constant")
     parser.add_argument('--n_warmup_epochs', default=2, type=int, 
