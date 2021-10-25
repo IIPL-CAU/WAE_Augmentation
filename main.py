@@ -40,9 +40,13 @@ if __name__=='__main__':
     parser.add_argument('--training', action='store_true')
     parser.add_argument('--testing', action='store_true')
     parser.add_argument('--resume', action='store_true')
-    # Data setting
+    # Data & Model setting
     parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News'],
                         help='Dataset select; [IMDB, Yelp, DBPia, AG_News]')
+    parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
+                        help='Tokenizer settings; Default is T5')
+    parser.add_argument('--model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
+                        help='Model settings; Default is T5')
     # Path setting
     parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
                         help='Original data path')
@@ -51,8 +55,6 @@ if __name__=='__main__':
     parser.add_argument('--save_path', default='/HDD/kyohoon/model_checkpoint/WAE/', type=str,
                         help='Model checkpoint file path')
     # Preprocessing setting
-    parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm'],
-                        help='Tokenizer settings; Default is T5')
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
     parser.add_argument('--valid_split_ratio', default=0.2, type=float,
@@ -67,6 +69,8 @@ if __name__=='__main__':
                         help='Padding token index; Default is 1')
     parser.add_argument('--eos_idx', default=2, type=int,
                         help='Padding token index; Default is 2')
+    parser.add_argument('--min_len', default=4, type=int,
+                        help='Minimum length of sequence; Default is 4')
     parser.add_argument('--max_len', default=300, type=int,
                         help='Maximum length of sequence; Default is 300')
     # Model setting
@@ -74,6 +78,8 @@ if __name__=='__main__':
                         help='PTransformer option; Default is True')
     parser.add_argument('--d_model', default=768, type=int, 
                         help='Transformer model dimension; Default is 512')
+    parser.add_argument('--d_latent', default=256, type=int, 
+                        help='Latent space dimension; Default is 256')
     parser.add_argument('--d_embedding', default=256, type=int, 
                         help='Transformer embedding word token dimension; Default is 256')
     parser.add_argument('--n_head', default=12, type=int, 
@@ -101,17 +107,13 @@ if __name__=='__main__':
     parser.add_argument('--clip_grad_norm', default=5, type=int, 
                         help='Graddient clipping norm; Default is 5')
     # WAE setting
+    parser.add_argument('--WAE_loss', default='mmd', choices=['mmd', 'gan'],
+                        help='Wasserstein Auto-encoder Loss Type; Default is mmd')
     parser.add_argument('--z_var', default=2, type=int,
                         help='Default is 2')
     parser.add_argument('--loss_lambda', default=100, type=int,
                         help='MMD loss lambda; Default is 100')
     # Training setting
-    parser.add_argument('--min_len', default=4, type=int,
-                        help='Minimum length of sequences; Default is 4')
-    parser.add_argument('--src_max_len', default=300, type=int,
-                        help='Minimum length of source sequences; Default is 300')
-    parser.add_argument('--trg_max_len', default=300, type=int,
-                        help='Minimum length of target sequences; Default is 300')
     parser.add_argument('--num_workers', default=8, type=int, 
                         help='Num CPU Workers; Default is 8')
     parser.add_argument('--batch_size', default=16, type=int, 

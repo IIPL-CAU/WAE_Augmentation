@@ -1,7 +1,7 @@
 import pickle
 import logging
 import sentencepiece as spm
-from transformers import BertTokenizer, T5Tokenizer
+from transformers import BertTokenizer, T5Tokenizer, BartTokenizer
 
 from task.utils import read_data, train_valid_split
 from utils import TqdmLoggingHandler, write_log
@@ -132,8 +132,10 @@ def preprocessing(args):
         # Load pre-trained tokenizer
         if args.tokenizer == 'BERT':
             tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-        if args.tokenizer == 'T5':
+        elif args.tokenizer == 'T5':
             tokenizer = T5Tokenizer.from_pretrained("t5-base")
+        elif args.tokenizer == 'Bart':
+            tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
 
         # Tokenizing
         if len(train_dat.columns) > 3:
@@ -196,7 +198,7 @@ def preprocessing(args):
     # Saving
     write_log(logger, "Saving Start")
 
-    if args.tokenizer == 'T5':
+    if args.tokenizer in ['T5', 'Bart']:
         with open(f'{args.preprocess_path}/{args.dataset}_{args.tokenizer}_preprocessed.pkl', 'wb') as f:
             pickle.dump({
                 'train': {

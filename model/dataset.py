@@ -8,7 +8,7 @@ class CustomDataset(Dataset):
                  attention_mask_list: list, token_type_ids_list: list = None, 
                  min_len: int = 4, max_len: int = 512):
         data = []
-        if tokenizer == 'T5':
+        if tokenizer in ['T5', 'Bart']:
             for i, a, l in zip(input_ids_list, attention_mask_list, label_list):
                 if min_len <= len(i) <= max_len:
                     data.append((i, a, l))
@@ -54,7 +54,7 @@ class PadCollate:
             return sentences
         
         out_ = zip(*batch)
-        if self.tokenizer == 'T5':
+        if self.tokenizer in ['T5', 'Bart']:
             id_, attention_, label_ = out_
             return pack_sentence(id_), \
                 pack_sentence(attention_), torch.LongTensor(label_)
