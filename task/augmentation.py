@@ -256,7 +256,7 @@ def augmenting(args):
         # Show Example
         original_sent = model.tokenizer.batch_decode(input_ids, skip_special_tokens=True)
         generated_sent = model.tokenizer.batch_decode(model_out.max(dim=2)[1], skip_special_tokens=True)
-        with open('example4.txt', 'a') as f:
+        with open(f'example_{args.dataset}_{args.model_type}_{args.WAE_loss}.txt', 'a') as f:
             f.write(f'epoch: {epoch} \n')
             f.write('Original Sentence\n')
             f.write(f'{original_sent}\n')

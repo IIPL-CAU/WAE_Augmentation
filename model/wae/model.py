@@ -67,13 +67,13 @@ class TransformerWAE(nn.Module):
                 self.model1 = BartForConditionalGeneration(config=model_config)
                 self.model2 = BartForConditionalGeneration(config=model_config)
             # Encoder1 Setting
-            self.encoder1_model = self.model.get_encoder()
+            self.encoder1_model = self.model1.get_encoder()
             # Dimension Setting
             self.d_hidden = self.encoder1_model.embed_tokens.embedding_dim
             # Encoder2 Setting
             self.encoder2_model = self.model2.get_encoder()
             # Decoder Setting
-            self.decoder_model = self.model.get_decoder()
+            self.decoder_model = self.model2.get_decoder()
             # Final Layer Setting
             self.vocab_size = self.model2.lm_head.out_features
             self.lm_head = self.model2.lm_head
