@@ -14,7 +14,8 @@ from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 # Import Custom Modules
 from model.dataset import CustomDataset, PadCollate
-from model.wae import TransformerWAE, mmd, sample_z, log_density_igaussian, Discirminator_model
+from model.wae.model import TransformerWAE, Discirminator_model
+from model.wae.loss import mmd, sample_z, log_density_igaussian
 from optimizer.utils import shceduler_select, optimizer_select
 from utils import TqdmLoggingHandler, write_log
 
@@ -67,7 +68,7 @@ def augmenting(args):
                             batch_size=args.batch_size, shuffle=True, pin_memory=True,
                             num_workers=args.num_workers),
         'valid': DataLoader(dataset_dict['valid'], collate_fn=PadCollate(args.tokenizer), drop_last=True,
-                            batch_size=args.batch_size, shuffle=False, pin_memory=True,
+                            batch_size=args.batch_size, shuffle=True, pin_memory=True,
                             num_workers=args.num_workers)
     }
 
@@ -102,7 +103,8 @@ def augmenting(args):
     # 3) Model resume
     start_epoch = 0
     if args.resume:
-        checkpoint = torch.load(os.path.join(args.save_path, 'checkpoint.pth.tar'), map_location='cpu')
+        save_name = f'{args.dataset}_{args.model_type}_wae_checkpoint.pth.tar'
+        checkpoint = torch.load(os.path.join(args.save_path, save_name), map_location='cpu')
         start_epoch = checkpoint['epoch'] + 1
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
@@ -126,7 +128,7 @@ def augmenting(args):
         start_time_e = time.time()
         model = model.train()
 
-        for i, (input_ids, attention_mask, label) in enumerate(tqdm(dataloader_dict['train'], 
+        for i, input_ in enumerate(tqdm(dataloader_dict['train'], 
                                                                bar_format='{l_bar}{bar:30}{r_bar}{bar:-30}')):
 
             #===================================#
@@ -137,11 +139,17 @@ def augmenting(args):
             optimizer.zero_grad()
 
             # Input, output setting
-            input_ids = input_ids.to(device, non_blocking=True)
-            attention_mask = attention_mask.to(device, non_blocking=True)
+            if len(input_) == 3:
+                input_ids = input_[0].to(device, non_blocking=True)
+                attention_mask = input_[1].to(device, non_blocking=True)
+                token_type_ids = None
+            if len(input_) == 4:
+                input_ids = input_[0].to(device, non_blocking=True)
+                token_type_ids = input_[1].to(device, non_blocking=True)
+                attention_mask = input_[2].to(device, non_blocking=True)
 
             # Model
-            wae_enc_out, wae_dec_out, model_out = model(input_ids, attention_mask)
+            wae_enc_out, wae_dec_out, model_out = model(input_ids, attention_mask, token_type_ids)
             z = sample_z(args=args, template=wae_enc_out)
 
             # Loss calculate
@@ -169,9 +177,10 @@ def augmenting(args):
                 total_D_loss = args.loss_lambda*D_loss
 
                 # Loss Back-propagation
-                
                 optimizer_d.zero_grad()
                 scaler_d.scale(total_D_loss).backward(retain_graph=True)
+                scaler_d.unscale_(optimizer_d)
+                clip_grad_norm_(model.parameters(), args.clip_grad_norm)
                 scaler_d.step(optimizer_d)
                 scaler_d.update()
 
@@ -220,7 +229,7 @@ def augmenting(args):
 
         with torch.no_grad():
             for i, (input_ids, attention_mask, label) in enumerate(tqdm(dataloader_dict['valid'],
-                                                                        bar_format='{l_bar}{bar:30}{r_bar}{bar:-30b}')):
+                                                                        bar_format='{l_bar}{bar:30}')):
 
                 # Input, output setting
                 input_ids = input_ids.to(device, non_blocking=True)
@@ -269,15 +278,24 @@ def augmenting(args):
             if not os.path.exists(args.save_path):
                 os.mkdir(args.save_path)
             # Save
+            save_name = f'{args.dataset}_{args.model_type}_wae_checkpoint.pth.tar'
             torch.save({
                 'epoch': epoch,
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'scheduler': scheduler.state_dict(),
                 'scaler': scaler.state_dict()
-            }, os.path.join(args.save_path, f'checkpoint.pth.tar'))
+            }, os.path.join(args.save_path, save_name))
             best_val_acc = val_acc
             best_epoch = epoch
+            if args.WAE_loss == 'gan':
+                save_name_d = f'{args.dataset}_{args.model_type}_wae_discriminator_checkpoint.pth.tar'
+                torch.save({
+                    'epoch': epoch,
+                    'model': D_model.state_dict(),
+                    'optimizer': optimizer_d.state_dict(),
+                    'scaler': scaler_d.state_dict()
+                }, os.path.join(args.save_path, save_name_d))
         else:
             else_log = f'Still {best_epoch} epoch accuracy({round(best_val_acc, 2)})% is better...'
             write_log(logger, else_log)
