@@ -47,6 +47,8 @@ if __name__=='__main__':
                         help='Tokenizer settings; Default is T5')
     parser.add_argument('--model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
                         help='Model settings; Default is T5')
+    parser.add_argument('--PLM_use', default=True, type=str2bool,
+                        help='')
     # Path setting
     parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
                         help='Original data path')

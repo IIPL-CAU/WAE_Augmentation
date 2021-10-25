@@ -38,7 +38,7 @@ def augmenting(args):
     #===================================#
 
     # 1) Data open
-    with open(f'{args.preprocess_path}/{args.dataset}_{args.tokenizer}_preprocessed.pkl', 'rb') as f:
+    with open(f'{args.preprocess_path}/{args.dataset}_{args.model_type}_preprocessed.pkl', 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
         train_attention_mask = data_['train']['attention_mask']
@@ -81,14 +81,14 @@ def augmenting(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
-    model = TransformerWAE(model_type=args.model_type, isPreTrain=True,
+    model = TransformerWAE(model_type=args.model_type, isPreTrain=args.PLM_use,
                            d_latent=args.d_latent, device=device)
     model = model.train()
     model = model.to(device)
     
     # 1-1) Discriminator for WAE-GAN Mode
     if args.WAE_loss == 'gan':
-        D_model = Discirminator_model(model_type=args.model_type, isPreTrain=True,
+        D_model = Discirminator_model(model_type=args.model_type, isPreTrain=args.PLM_use,
                                       device=device, class_token='first_token')
         D_model = D_model.train()
         D_model = D_model.to(device)
