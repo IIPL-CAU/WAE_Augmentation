@@ -10,6 +10,9 @@ def path_check(args):
     if not os.path.exists(args.save_path):
         os.mkdir(args.save_path)
 
+    if not os.path.exists(args.augmentation_path):
+        os.mkdir(args.augmentation_path)
+
 class TqdmLoggingHandler(logging.Handler):
     """
     tqdm logger setting

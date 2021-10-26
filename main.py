@@ -3,7 +3,8 @@ from time import time
 
 # Import custom modules
 from task.preprocessing import preprocessing
-from task.augmentation import augmenting
+from task.augment_training import augment_training
+from task.augmentation import augmentation
 # from task.training import training
 # from task.testing import testing
 from utils import str2bool, path_check
@@ -20,14 +21,17 @@ def main(args):
     if args.preprocessing:
         preprocessing(args)
 
-    if args.augmenting:
-        augmenting(args)
+    if args.augment_training:
+        augment_training(args)
 
-    # if args.training:
-    #     training(args)
+    if args.augmentation:
+        augmentation(args)
 
-    # if args.testing:
-    #     testing(args)
+    if args.training:
+        training(args)
+
+    if args.testing:
+        testing(args)
 
     # Time calculate
     print(f'Done! ; {round((time()-total_start_time)/60, 3)}min spend')
@@ -36,19 +40,14 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Parsing Method')
     # Task setting
     parser.add_argument('--preprocessing', action='store_true')
-    parser.add_argument('--augmenting', action='store_true')
+    parser.add_argument('--augment_training', action='store_true')
+    parser.add_argument('--augmentation', action='store_true')
     parser.add_argument('--training', action='store_true')
     parser.add_argument('--testing', action='store_true')
     parser.add_argument('--resume', action='store_true')
-    # Data & Model setting
+    # Data setting
     parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News'],
                         help='Dataset select; [IMDB, Yelp, DBPia, AG_News]')
-    parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
-                        help='Tokenizer settings; Default is T5')
-    parser.add_argument('--model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
-                        help='Model settings; Default is T5')
-    parser.add_argument('--PLM_use', default=True, type=str2bool,
-                        help='')
     # Path setting
     parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
                         help='Original data path')
@@ -56,6 +55,8 @@ if __name__=='__main__':
                         help='Preprocessed data  file path')
     parser.add_argument('--save_path', default='/HDD/kyohoon/model_checkpoint/WAE/', type=str,
                         help='Model checkpoint file path')
+    parser.add_argument('--augmentation_path', default='./augmentation', type=str,
+                        help='Augmented file path')
     # Preprocessing setting
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
@@ -76,36 +77,16 @@ if __name__=='__main__':
     parser.add_argument('--max_len', default=300, type=int,
                         help='Maximum length of sequence; Default is 300')
     # Model setting
-    parser.add_argument('--parallel', default=True, type=str2bool,
-                        help='PTransformer option; Default is True')
+    parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
+                        help='Tokenizer settings; Default is T5')
+    parser.add_argument('--model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
+                        help='Model settings; Default is T5')
+    parser.add_argument('--PLM_use', default=True, type=str2bool,
+                        help='Pre-trained model usage; Default is True')
     parser.add_argument('--d_model', default=768, type=int, 
                         help='Transformer model dimension; Default is 512')
     parser.add_argument('--d_latent', default=256, type=int, 
                         help='Latent space dimension; Default is 256')
-    parser.add_argument('--d_embedding', default=256, type=int, 
-                        help='Transformer embedding word token dimension; Default is 256')
-    parser.add_argument('--n_head', default=12, type=int, 
-                        help="Multihead Attention's head count; Default is 12")
-    parser.add_argument('--d_k', default=64, type=int, 
-                        help="Transformer's key dimension; Default is 64")
-    parser.add_argument('--d_v', default=64, type=int, 
-                        help="Transformer's value dimension; Default is 64")
-    parser.add_argument('--dim_feedforward', default=2048, type=int, 
-                        help="Feedforward network's dimension; Default is 768")
-    parser.add_argument('--dropout', default=0.5, type=float, 
-                        help="Dropout ration; Default is 0.5")
-    parser.add_argument('--embedding_dropout', default=0.3, type=float, 
-                        help="Embedding dropout ration; Default is 0.3")
-    parser.add_argument('--n_common_layers', default=6, type=int, 
-                        help="In PTransformer, parallel layer count; Default is 6")
-    parser.add_argument('--n_encoder_layers', default=6, type=int, 
-                        help="Number of encoder layers; Default is 6")
-    parser.add_argument('--n_decoder_layers', default=6, type=int, 
-                        help="Number of decoder layers; Default is 6")
-    parser.add_argument('--trg_emb_prj_weight_sharing', default=False, type=str2bool, 
-                        help="Share weight between target embedding & last dense layer; Default is False")
-    parser.add_argument('--emb_src_trg_weight_sharing', default=True, type=str2bool, 
-                        help="Share weight between source and target embedding; Default is True")
     parser.add_argument('--clip_grad_norm', default=5, type=int, 
                         help='Graddient clipping norm; Default is 5')
     # WAE setting
@@ -121,7 +102,7 @@ if __name__=='__main__':
     parser.add_argument('--batch_size', default=16, type=int, 
                         help='Batch size; Default is 16')
     parser.add_argument('--num_epochs', default=100, type=int, 
-                        help='Epoch count; Default is 100=300')
+                        help='Epoch count; Default is 100')
     parser.add_argument('--lr', default=1e-5, type=float,
                         help='Maximum learning rate of warmup scheduler; Default is 5e-5')
     parser.add_argument('--w_decay', default=1e-5, type=float,
