@@ -136,9 +136,34 @@ def augmentation(args):
             total_sentence_list.append(generated_sent)
             total_label_list.append(label_list)
 
-    # Save
+    #===================================#
+    #===============Save================#
+    #===================================#
+
+    # CSV Save
     data_name = f'{args.dataset}_{args.model_type}_{args.WAE_loss}.csv'
     aug_dat = pd.DataFrame({
         'description': total_sentence_list,
         'label': total_label_list
-    }).to_csv(os.path.join(args.augmentation_path, data_name))
+    })
+    aug_dat.to_csv(os.path.join(args.augmentation_path, data_name))
+
+    # Pickle Save
+
+    encoded_out = tokenizer(
+        total_sentence_list,
+        max_length=args.max_len,
+        padding='max_length',
+        truncation=True
+    )
+    encoded_out['label'] = total_label_list
+
+    data_name = f'{args.dataset}_{args.model_type}_aug_preprocessed.pkl'
+    with open(os.path.join(args.preprocess_path, data_name), 'wb') as f:
+        pickle.dump({
+            'augmented': {
+                'input_ids': encoded_out['input_ids'],
+                'attention_mask': encoded_out['attention_mask'],
+                'label': encoded_out['label']
+            }
+        }, f)
