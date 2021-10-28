@@ -5,8 +5,8 @@ from time import time
 from task.preprocessing import preprocessing
 from task.augment_training import augment_training
 from task.augmentation import augmentation
-# from task.training import training
-# from task.testing import testing
+from task.training import training
+from task.testing import testing
 from utils import str2bool, path_check
 
 def main(args):
@@ -81,6 +81,8 @@ if __name__=='__main__':
                         help='Tokenizer settings; Default is T5')
     parser.add_argument('--model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
                         help='Model settings; Default is T5')
+    parser.add_argument('--classifier_model_type', default='CNN', type=str, choices=['CNN', 'RNN', 'BERT'],
+                        help='Classifier model settings; Default is CNN')
     parser.add_argument('--PLM_use', default=True, type=str2bool,
                         help='Pre-trained model usage; Default is True')
     parser.add_argument('--d_model', default=768, type=int, 
