@@ -13,6 +13,8 @@ import torch.nn.functional as F
 from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
+# Import Huggingface
+from transformers import BertTokenizer
 # Import Custom Modules
 from model.wae.dataset import CustomDataset, PadCollate
 from model.wae.model import TransformerWAE, Discirminator_model
@@ -149,7 +151,7 @@ def augmentation(args):
     aug_dat.to_csv(os.path.join(args.augmentation_path, data_name))
 
     # Pickle Save
-
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     encoded_out = tokenizer(
         total_sentence_list,
         max_length=args.max_len,
@@ -164,6 +166,7 @@ def augmentation(args):
             'augmented': {
                 'input_ids': encoded_out['input_ids'],
                 'attention_mask': encoded_out['attention_mask'],
+                'token_type_ids': encoded_out['token_type_ids'],
                 'label': encoded_out['label']
             }
         }, f)

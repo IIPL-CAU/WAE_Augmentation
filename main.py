@@ -5,8 +5,8 @@ from time import time
 from task.preprocessing import preprocessing
 from task.augment_training import augment_training
 from task.augmentation import augmentation
-# from task.training import training
-# from task.testing import testing
+from task.training import training
+from task.testing import testing
 from utils import str2bool, path_check
 
 def main(args):
