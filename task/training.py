@@ -15,6 +15,7 @@ from torch.nn.utils import clip_grad_norm_
 # Import Custom Modules
 from model.wae.dataset import CustomDataset, PadCollate
 from model.classification.cnn import ClassifierCNN
+from model.classification.rnn import ClassifierRNN
 from optimizer.utils import shceduler_select, optimizer_select
 from utils import TqdmLoggingHandler, write_log
 
@@ -86,8 +87,14 @@ def training(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
-    model = ClassifierCNN(tokenizer_type=args.model_type, vocab_size=vocab_size+1,
-                          max_len=args.max_len, class_num=max(train_label)+1, device=device)
+    if args.classifier_model_type == 'CNN':
+        model = ClassifierCNN(tokenizer_type=args.model_type, vocab_size=vocab_size+1,
+                              max_len=args.max_len, class_num=max(train_label)+1, device=device)
+    elif args.classifier_model_type == 'RNN':
+        model = ClassifierRNN(tokenizer_type=args.model_type, vocab_size=vocab_size+1,
+                              max_len=args.max_len, class_num=max(train_label)+1, device=device)
+    else:
+        raise ValueError("Model type is not supported.")
     model = model.train()
     model = model.to(device)
 
