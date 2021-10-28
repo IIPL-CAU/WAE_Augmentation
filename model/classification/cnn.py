@@ -2,14 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# Import Huggingface
-# T5
-from transformers import T5Tokenizer
-# Bart
-from transformers import BartTokenizer
-# BERT
-from transformers import BertTokenizer
-
+# Import Huggingface tokenizers
+from transformers import T5Tokenizer, BartTokenizer, BertTokenizer
 
 
 class ClassifierCNN(nn.Module):
@@ -49,10 +43,10 @@ class ClassifierCNN(nn.Module):
 
         self.embedding = nn.Embedding(vocab_size, embed_size)
         self.conv = nn.Sequential(
-            nn.Conv1d(in_channels=max_len, out_channels=filter_num, kernel_size=filter_size),
+            nn.Conv1d(in_channels=embed_size, out_channels=filter_num, kernel_size=filter_size),
             nn.MaxPool1d(kernel_size=filter_size)
         )
-        self.linear_input_size = filter_num * ((max_len - filter_size + 1) // filter_size)
+        self.linear_input_size = filter_num * ((embed_size - filter_size + 1) // filter_size)
         self.linear = nn.Sequential(
             nn.Linear(self.linear_input_size, linear_size),
             nn.ReLU(),
