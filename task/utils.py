@@ -77,6 +77,82 @@ def read_data(data_name: str, data_path: str):
         train_dat['total_text'] = train_dat['description']
         test_dat['total_text'] = test_dat['description']
 
+    if data_name == 'SST2':
+        train_dat = pd.read_csv(os.path.join(data_path , 'SST2/train.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+        test_dat = pd.read_csv(os.path.join(data_path , 'SST2/test.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
+
+        train_dat['total_text'] = train_dat['description']
+        test_dat['total_text'] = test_dat['description']
+
+    if data_name == 'SST5':
+        train_dat = pd.read_csv(os.path.join(data_path , 'SST5/train.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+        test_dat = pd.read_csv(os.path.join(data_path , 'SST5/test.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
+
+        train_dat['total_text'] = train_dat['description']
+        test_dat['total_text'] = test_dat['description']
+    
+    if data_name == 'SUBJ':
+        train_dat = pd.read_csv(os.path.join(data_path , 'SUBJ/train.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+        test_dat = pd.read_csv(os.path.join(data_path , 'SUBJ/test.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
+
+        train_dat['total_text'] = train_dat['description']
+        test_dat['total_text'] = test_dat['description']
+    
+    if data_name == 'TREC':
+        train_dat = pd.read_csv(os.path.join(data_path , 'TREC/train.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+        test_dat = pd.read_csv(os.path.join(data_path , 'TREC/test.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
+
+        train_dat['total_text'] = train_dat['description']
+        test_dat['total_text'] = test_dat['description']
+    
+    if data_name == 'ProsCons':
+        train_dat = pd.read_csv(os.path.join(data_path , 'ProsCons/train.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+        test_dat = pd.read_csv(os.path.join(data_path , 'ProsCons/test.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
+
+        train_dat['total_text'] = train_dat['description']
+        test_dat['total_text'] = test_dat['description']
+
+
     return train_dat, test_dat, label_dict
 
 def train_valid_split(dataframe_: pd.DataFrame, valid_split_ratio: float):

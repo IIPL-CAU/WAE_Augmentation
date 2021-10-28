@@ -46,7 +46,7 @@ if __name__=='__main__':
     parser.add_argument('--testing', action='store_true')
     parser.add_argument('--resume', action='store_true')
     # Data setting
-    parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News'],
+    parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News', 'SST2', 'ProsCons', 'SUBJ', 'TREJ'],
                         help='Dataset select; [IMDB, Yelp, DBPia, AG_News]')
     # Path setting
     parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
@@ -57,6 +57,8 @@ if __name__=='__main__':
                         help='Model checkpoint file path')
     parser.add_argument('--augmentation_path', default='./augmentation', type=str,
                         help='Augmented file path')
+    parser.add_argument('--classification_path', default='./classification', type=str,
+                        help='Classified file path')
     # Preprocessing setting
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
