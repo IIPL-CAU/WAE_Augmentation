@@ -123,19 +123,19 @@ def testing(args):
             acc = sum(label.view(-1) == prediction.view(-1)) / len(label.view(-1))
             acc = acc.item() * 100
             test_acc += acc
-            write_log(logger, 'Test Batch Accuracy: %3.2f%%' % acc)
+            #write_log(logger, 'Test Batch Accuracy: %3.2f%%' % acc)
 
             # Append
             total_sentence_list.append(sent)
             total_label_list.append(label.tolist())
             total_prediction_list.append(prediction.cpu().tolist())
     # Save
-    data_name = f'{args.dataset}_{args.classifier_model_type}.csv'
+    test_acc /= len(dataloader_dict['test'])
+    data_name = f'{args.dataset}_{args.classifier_model_type}_{str(test_acc)}.csv'
     aug_dat = pd.DataFrame({
         'description': total_sentence_list,
         'label': total_label_list,
         'prediction': total_prediction_list
-    }).to_csv(os.path.join(args.augmentation_path, data_name))
+    }).to_csv(os.path.join(args.classification_path, data_name))
 
-    test_acc /= len(dataloader_dict['test'])
     write_log(logger, 'Test Total Accuracy: %3.2f%%' % test_acc)

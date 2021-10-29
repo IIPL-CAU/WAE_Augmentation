@@ -46,7 +46,7 @@ if __name__=='__main__':
     parser.add_argument('--testing', action='store_true')
     parser.add_argument('--resume', action='store_true')
     # Data setting
-    parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News', 'SST2', 'ProsCons', 'SUBJ', 'TREJ'],
+    parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News', 'SST2', 'SST5', 'ProsCons', 'SUBJ', 'TREC'],
                         help='Dataset select; [IMDB, Yelp, DBPia, AG_News]')
     # Path setting
     parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
