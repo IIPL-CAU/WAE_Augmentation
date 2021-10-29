@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 # Import Custom Modules
 from model.classification.dataset import CustomDataset, PadCollate
-from model.classification.model import cls_model
+from model.classification.model import Classifier
 from optimizer.utils import shceduler_select, optimizer_select
 from utils import TqdmLoggingHandler, write_log
 
@@ -57,30 +57,22 @@ def augment_training(args):
     if args.train_with_augmentation:
         with open(f'{args.preprocess_path}/{args.dataset}_{args.model_type}_preprocessed.pkl', 'rb') as f:
             data_ = pickle.load(f)
-            aug_input_ids = data_['train']['input_ids']
-            aug_attention_mask = data_['train']['attention_mask']
-            aug_label = data_['train']['label']
+            train_input_ids = train_input_ids + data_['train']['input_ids']
+            train_attention_mask = train_attention_mask + data_['train']['attention_mask']
+            train_label = train_label + data_['train']['label']
             if args.tokenizer in ['T5', 'Bart']:
-                aug_token_type_ids = None
+                train_token_type_ids = None
             else:
-                aug_token_type_ids = data_['train']['token_type_ids']
+                train_token_type_ids = train_token_type_ids + data_['train']['token_type_ids']
             del data_
-    else:
-        aug_input_ids = list()
-        aug_attention_mask = list()
-        aug_label = list()
-        if train_token_type_ids is None:
-            aug_token_type_ids = None
-        else:
-            aug_token_type_ids = list()
 
     # 3) Dataloader setting
     dataset_dict = {
         'train': CustomDataset(tokenizer=args.tokenizer, 
-                               input_ids_list=train_input_ids+aug_input_ids,
-                               label_list=train_label+aug_label, 
-                               attention_mask_list=train_attention_mask+aug_attention_mask,
-                               token_type_ids_list=train_token_type_ids+aug_token_type_ids,
+                               input_ids_list=train_input_ids,
+                               label_list=train_label, 
+                               attention_mask_list=train_attention_mask,
+                               token_type_ids_list=train_token_type_ids,
                                min_len=args.min_len, max_len=args.max_len),
         'valid': CustomDataset(tokenizer=args.tokenizer, 
                                input_ids_list=valid_input_ids,
@@ -107,14 +99,14 @@ def augment_training(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
-    model = cls_model(args.model_type)
+    model = Classifier(model_type=args.model_type, isPreTrain=args.PLM_use)
     model = model.train()
     model = model.to(device)
 
     # 2) Optimizer setting
     optimizer = optimizer_select(model, args)
     scheduler = shceduler_select(optimizer, dataloader_dict, args)
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
     scaler = GradScaler()
 
     # 3) Model resume

@@ -5,8 +5,8 @@ from time import time
 from task.preprocessing import preprocessing
 from task.augment_training import augment_training
 from task.augmentation import augmentation
-from task.training import training
-from task.testing import testing
+# from task.training import training
+# from task.testing import testing
 from utils import str2bool, path_check
 
 def main(args):
@@ -27,11 +27,11 @@ def main(args):
     if args.augmentation:
         augmentation(args)
 
-    if args.training:
-        training(args)
+    # if args.training:
+    #     training(args)
 
-    if args.testing:
-        testing(args)
+    # if args.testing:
+    #     testing(args)
 
     # Time calculate
     print(f'Done! ; {round((time()-total_start_time)/60, 3)}min spend')
@@ -46,7 +46,7 @@ if __name__=='__main__':
     parser.add_argument('--testing', action='store_true')
     parser.add_argument('--resume', action='store_true')
     # Data setting
-    parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News'],
+    parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News', 'SST2', 'SST5', 'ProsCons', 'SUBJ', 'TREC', 'MR'],
                         help='Dataset select; [IMDB, Yelp, DBPia, AG_News]')
     # Path setting
     parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
@@ -81,6 +81,8 @@ if __name__=='__main__':
                         help='Tokenizer settings; Default is T5')
     parser.add_argument('--model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
                         help='Model settings; Default is T5')
+    parser.add_argument('--classifier_model_type', default='CNN', type=str, choices=['CNN', 'RNN', 'BERT'],
+                        help='Classifier model settings; Default is CNN')
     parser.add_argument('--PLM_use', default=True, type=str2bool,
                         help='Pre-trained model usage; Default is True')
     parser.add_argument('--d_model', default=768, type=int, 
@@ -107,6 +109,8 @@ if __name__=='__main__':
                         help='Maximum learning rate of warmup scheduler; Default is 5e-5')
     parser.add_argument('--w_decay', default=1e-5, type=float,
                         help="Ralamb's weight decay; Default is 1e-5")
+    parser.add_argument('--label_smoothing', default=0.05, type=float,
+                        help="Label smoothing ratio; Default is 0.05")
     # Optimizer & LR_Scheduler setting
     optim_list = ['AdamW', 'Adam', 'SGD', 'Ralamb']
     scheduler_list = ['constant', 'warmup', 'reduce_train', 'reduce_valid', 'lambda']

@@ -80,6 +80,8 @@ class TransformerWAE(nn.Module):
         elif self.model_type == 'BERT':
             # To Do
             self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        else:
+            raise ValueError('not supported')
 
         # For latent mapping
         self.hidden2latent = nn.Linear(self.d_hidden, self.d_latent)
@@ -99,8 +101,12 @@ class TransformerWAE(nn.Module):
             wae_enc_out = self.encoder1_final_layer_norm(wae_enc_out)
             wae_enc_out = self.encoder1_dropout(wae_enc_out)
 
+            # Linear
+            wae_enc_out = self.hidden2latent(wae_enc_out)
+            wae_dec_out = self.latent2hidden(wae_enc_out)
+
             # Encoder2 Forward
-            wae_dec_out = self.encoder2_model(inputs_embeds=wae_enc_out, 
+            wae_dec_out = self.encoder2_model(inputs_embeds=wae_dec_out, 
                                               attention_mask=attention_mask)
             wae_dec_out = wae_dec_out['last_hidden_state']
 
