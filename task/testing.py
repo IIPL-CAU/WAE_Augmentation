@@ -41,6 +41,7 @@ def testing(args):
     with open(f'{args.preprocess_path}/{args.dataset}_{args.model_type}_preprocessed.pkl', 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
+        valid_input_ids = data_['valid']['input_ids']
         test_input_ids = data_['test']['input_ids']
         test_attention_mask = data_['test']['attention_mask']
         test_label = data_['test']['label']
@@ -52,6 +53,10 @@ def testing(args):
 
     vocab_size = 0
     for each_line in train_input_ids:
+        max_id = max(each_line)
+        if max_id > vocab_size:
+            vocab_size = max_id
+    for each_line in valid_input_ids:
         max_id = max(each_line)
         if max_id > vocab_size:
             vocab_size = max_id

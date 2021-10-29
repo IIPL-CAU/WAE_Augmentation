@@ -50,10 +50,11 @@ class ClassifierCNN(nn.Module):
         self.linear_input_size = filter_num * ((embed_size - filter_size + 1) // 2)
         self.linear1 = nn.Sequential(
             nn.Linear(self.linear_input_size, linear_size),
-            nn.ReLU(),
+            nn.ReLU()
         )
         self.linear2 = nn.Linear(linear_size, class_num)
         nn.init.normal_(self.linear2.weight)
+        nn.init.normal_(self.linear2.bias)
 
     def forward(self, input_ids):
         """
@@ -75,6 +76,5 @@ class ClassifierCNN(nn.Module):
         conv = conv.view(conv.size(0), -1)
         # Linear
         linear = self.linear1(conv)
-        # Softmax
         output = self.linear2(linear)
-        return linear
+        return output

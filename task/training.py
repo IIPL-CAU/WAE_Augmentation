@@ -59,6 +59,10 @@ def training(args):
         max_id = max(each_line)
         if max_id > vocab_size:
             vocab_size = max_id
+    for each_line in valid_input_ids:
+        max_id = max(each_line)
+        if max_id > vocab_size:
+            vocab_size = max_id
 
     # 2) Dataloader setting
     dataset_dict = {
