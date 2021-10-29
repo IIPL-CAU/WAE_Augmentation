@@ -227,6 +227,13 @@ def augment_training(args):
         val_loss = 0
         val_acc = 0
 
+        # Save setting
+        original_list = list()
+        generated_list = list()
+        path_ = f'{args.dataset}_{args.model_type}_wae_PLM_{args.PLM_use}'
+        if not os.path.exists(os.path.join(args.augmentation_path, path_)):
+            os.mkdir(os.path.join(args.augmentation_path, path_))
+
         with torch.no_grad():
             for i, input_ in enumerate(tqdm(dataloader_dict['valid'],
                                        bar_format='{l_bar}{bar:30}')):
@@ -258,6 +265,16 @@ def augment_training(args):
                 acc = acc.item() * 100
                 val_loss += total_loss.item()
                 val_acc += acc
+
+                # Generated sample save
+                original_list.extend(model.tokenizer.batch_decode(input_ids, skip_special_tokens=True))
+                generated_list.extend(model.tokenizer.batch_decode(model_out.max(dim=2)[1], skip_special_tokens=True))
+                generated_dat = pd.DataFrame({
+                    'original': original_list,
+                    'generated': generated_list
+                })
+                save_path = os.path.join(args.augmentation_path, path_, f'{args.epoch}.csv')
+                generated_dat.to_csv(save_path, index=False)
 
         # Show Example
         original_sent = model.tokenizer.batch_decode(input_ids, skip_special_tokens=True)
