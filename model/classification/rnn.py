@@ -80,7 +80,7 @@ class ClassifierRNN(nn.Module):
         lstm2_out, _ = pad_packed_sequence(lstm2_out, batch_first=True) # (batch_size, max_len, 2 * hidden2_size)
         lstm2_out = self.dropout2(lstm2_out)
         # Linear
-        linear = self.linear1(lstm2_out[:, -1, :7]) # (batch_size, linear_size)
+        linear = self.linear1(lstm2_out[:, -1, :]) # (batch_size, linear_size)
         # Softmax
         output = self.linear2(linear) # (batch_size, class_num)
         return output
