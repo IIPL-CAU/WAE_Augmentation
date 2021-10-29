@@ -44,14 +44,16 @@ class ClassifierCNN(nn.Module):
         self.embedding = nn.Embedding(vocab_size, embed_size)
         self.conv = nn.Sequential(
             nn.Conv1d(in_channels=embed_size, out_channels=filter_num, kernel_size=filter_size),
-            nn.MaxPool1d(kernel_size=filter_size)
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2)
         )
-        self.linear_input_size = filter_num * ((embed_size - filter_size + 1) // filter_size)
-        self.linear = nn.Sequential(
+        self.linear_input_size = filter_num * ((embed_size - filter_size + 1) // 2)
+        self.linear1 = nn.Sequential(
             nn.Linear(self.linear_input_size, linear_size),
             nn.ReLU(),
-            nn.Linear(linear_size, class_num)
         )
+        self.linear2 = nn.Linear(linear_size, class_num)
+        nn.init.normal_(self.linear2.weight)
 
     def forward(self, input_ids):
         """
@@ -72,7 +74,7 @@ class ClassifierCNN(nn.Module):
         # Reshape conv
         conv = conv.view(conv.size(0), -1)
         # Linear
-        linear = self.linear(conv)
+        linear = self.linear1(conv)
         # Softmax
-        output = F.softmax(linear, dim=1)
-        return output
+        output = self.linear2(linear)
+        return linear

@@ -48,11 +48,12 @@ class ClassifierRNN(nn.Module):
         self.lstm2 = nn.LSTM(2 * hidden1_size, hidden2_size, bidirectional=True, batch_first=True)
         self.dropout2 = nn.Dropout(0.5)
         self.linear_input_size = 2 * hidden2_size
-        self.linear = nn.Sequential(
+        self.linear1 = nn.Sequential(
             nn.Linear(self.linear_input_size, linear_size),
-            nn.ReLU(),
-            nn.Linear(linear_size, class_num)
+            nn.ReLU()
         )
+        self.linear2 = nn.Linear(linear_size, class_num)
+        nn.init.normal_(self.linear2.weight)
 
     def forward(self, input_ids):
         """
@@ -79,7 +80,7 @@ class ClassifierRNN(nn.Module):
         lstm2_out, _ = pad_packed_sequence(lstm2_out, batch_first=True) # (batch_size, max_len, 2 * hidden2_size)
         lstm2_out = self.dropout2(lstm2_out)
         # Linear
-        linear_out = self.linear(lstm2_out[:, -1]) # (batch_size, max_len, class_num)
+        linear = self.linear1(lstm2_out[:, -1, :7]) # (batch_size, linear_size)
         # Softmax
-        output = F.softmax(linear_out, dim=1)
+        output = self.linear2(linear) # (batch_size, class_num)
         return output
