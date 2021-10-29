@@ -152,6 +152,21 @@ def read_data(data_name: str, data_path: str):
         train_dat['total_text'] = train_dat['description']
         test_dat['total_text'] = test_dat['description']
 
+    if data_name == 'MR':
+        train_dat = pd.read_csv(os.path.join(data_path , 'MR/train.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+        test_dat = pd.read_csv(os.path.join(data_path , 'MR/test.csv'), sep=',',
+                                header=0, names=['label', 'description'])
+
+        label_dict = dict()
+        for i, label_ in enumerate(sorted(train_dat['label'].unique())):
+            label_dict[label_] = i
+        train_dat['label'] = train_dat['label'].apply(lambda x: label_dict[x])
+        test_dat['label'] = test_dat['label'].apply(lambda x: label_dict[x])
+
+        train_dat['total_text'] = train_dat['description']
+        test_dat['total_text'] = test_dat['description']
+
 
     return train_dat, test_dat, label_dict
 
