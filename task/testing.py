@@ -136,6 +136,7 @@ def testing(args):
             total_prediction_list.append(prediction.cpu().tolist())
     # Save
     test_acc /= len(dataloader_dict['test'])
+    test_acc = round(test_acc, 2)
     data_name = f'{args.dataset}_{args.classifier_model_type}_{str(test_acc)}.csv'
     aug_dat = pd.DataFrame({
         'description': total_sentence_list,
