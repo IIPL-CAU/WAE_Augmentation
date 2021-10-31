@@ -27,6 +27,9 @@ def optimizer_select(model, args):
     elif args.optimizer == 'Ralamb':
         optimizer = Ralamb(filter(lambda p: p.requires_grad, model.parameters()), 
                            lr=args.lr)
+    elif args.optimizer == 'Adadelta':
+        optimizer = optim.Adadelta(filter(lambda p: p.requires_grad, model.parameters()),
+                                   lr=args.lr)
     else:
         raise Exception("Choose optimizer in ['AdamW', 'Adam', 'SGD', 'Ralamb']")
     return optimizer

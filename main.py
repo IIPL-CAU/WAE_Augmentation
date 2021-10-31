@@ -5,7 +5,7 @@ from time import time
 from task.preprocessing import preprocessing
 from task.augment_training import augment_training
 from task.augmentation import augmentation
-# from task.training import training
+from task.training import training
 # from task.testing import testing
 from utils import str2bool, path_check
 
@@ -27,8 +27,8 @@ def main(args):
     if args.augmentation:
         augmentation(args)
 
-    # if args.training:
-    #     training(args)
+    if args.training:
+        training(args)
 
     # if args.testing:
     #     testing(args)
@@ -46,16 +46,17 @@ if __name__=='__main__':
     parser.add_argument('--testing', action='store_true')
     parser.add_argument('--resume', action='store_true')
     # Data setting
-    parser.add_argument('--dataset', type=str, choices=['IMDB', 'Yelp', 'DBPia', 'AG_News', 'SST2', 'SST5', 'ProsCons', 'SUBJ', 'TREC', 'MR'],
-                        help='Dataset select; [IMDB, Yelp, DBPia, AG_News]')
+    data_ = ['IMDB', 'Yelp', 'DBPia', 'AG_News', 'SST2', 'SST5', 'ProsCons', 'SUBJ', 'TREC', 'MR']
+    parser.add_argument('--dataset', type=str, choices=data_,
+                        help='Dataset select; [IMDB, Yelp, DBPia, AG_News, SST2, SST5, ProsCons, SUBJ, TREC, MR]')
     # Path setting
     parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
                         help='Original data path')
-    parser.add_argument('--preprocess_path', default='./preprocessing', type=str,
+    parser.add_argument('--preprocess_path', default='/HDD/kyohoon/WAE/preprocessing', type=str,
                         help='Preprocessed data  file path')
     parser.add_argument('--save_path', default='/HDD/kyohoon/model_checkpoint/WAE/', type=str,
                         help='Model checkpoint file path')
-    parser.add_argument('--augmentation_path', default='./augmentation', type=str,
+    parser.add_argument('--augmentation_path', default='/HDD/kyohoon/WAE/augmentation', type=str,
                         help='Augmented file path')
     # Preprocessing setting
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
@@ -79,12 +80,10 @@ if __name__=='__main__':
     # Model setting
     parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
                         help='Tokenizer settings; Default is T5')
-    parser.add_argument('--model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
+    parser.add_argument('--aug_model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
                         help='Model settings; Default is T5')
     parser.add_argument('--classifier_model_type', default='CNN', type=str, choices=['CNN', 'RNN', 'BERT'],
                         help='Classifier model settings; Default is CNN')
-    parser.add_argument('--PLM_use', default=True, type=str2bool,
-                        help='Pre-trained model usage; Default is True')
     parser.add_argument('--d_model', default=768, type=int, 
                         help='Transformer model dimension; Default is 512')
     parser.add_argument('--d_latent', default=256, type=int, 
@@ -99,6 +98,12 @@ if __name__=='__main__':
     parser.add_argument('--loss_lambda', default=100, type=int,
                         help='MMD loss lambda; Default is 100')
     # Training setting
+    parser.add_argument('--train_with_augmentation', default=True, type=str2bool,
+                        help='Text classifier training with augmentation data; Default is True')
+    parser.add_argument('--cls_model_type', default='CNN', type=str, choices=['CNN', 'RNN', 'BERT'],
+                        help='Classifier model settings; Default is CNN')
+    parser.add_argument('--cls_PLM_use', default=True, type=str2bool,
+                        help='Model settings; Default is T5')
     parser.add_argument('--num_workers', default=8, type=int, 
                         help='Num CPU Workers; Default is 8')
     parser.add_argument('--batch_size', default=16, type=int, 

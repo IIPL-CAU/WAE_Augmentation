@@ -18,7 +18,7 @@ from model.classification.model import Classifier
 from optimizer.utils import shceduler_select, optimizer_select
 from utils import TqdmLoggingHandler, write_log
 
-def augment_training(args):
+def training(args):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -30,14 +30,14 @@ def augment_training(args):
     logger.addHandler(handler)
     logger.propagate = False
 
-    write_log(logger, "Augmenting Start")
+    write_log(logger, "Training Start")
 
     #===================================#
     #============Data Load==============#
     #===================================#
 
     # 1) Data Open
-    with open(f'{args.preprocess_path}/{args.dataset}_{args.model_type}_preprocessed.pkl', 'rb') as f:
+    with open(f'{args.preprocess_path}/{args.dataset}_{args.cls_model_type}_preprocessed.pkl', 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
         train_attention_mask = data_['train']['attention_mask']
@@ -55,15 +55,15 @@ def augment_training(args):
 
     # 2) Augmented Data Open
     if args.train_with_augmentation:
-        with open(f'{args.preprocess_path}/{args.dataset}_{args.model_type}_preprocessed.pkl', 'rb') as f:
+        with open(f'{args.preprocess_path}/{args.dataset}_{args.aug_model_type}_preprocessed.pkl', 'rb') as f:
             data_ = pickle.load(f)
-            train_input_ids = train_input_ids + data_['train']['input_ids']
-            train_attention_mask = train_attention_mask + data_['train']['attention_mask']
-            train_label = train_label + data_['train']['label']
+            train_input_ids = train_input_ids + data_['augmented']['input_ids']
+            train_attention_mask = train_attention_mask + data_['augmented']['attention_mask']
+            train_label = train_label + data_['augmented']['label']
             if args.tokenizer in ['T5', 'Bart']:
                 train_token_type_ids = None
             else:
-                train_token_type_ids = train_token_type_ids + data_['train']['token_type_ids']
+                train_token_type_ids = train_token_type_ids + data_['augmented']['token_type_ids']
             del data_
 
     # 3) Dataloader setting
@@ -99,14 +99,15 @@ def augment_training(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
-    model = Classifier(model_type=args.model_type, isPreTrain=args.PLM_use)
+    model = Classifier(model_type=args.cls_model_type, isPreTrain=args.cls_PLM_use,
+                       num_class=len(set(train_label)))
     model = model.train()
     model = model.to(device)
 
     # 2) Optimizer setting
     optimizer = optimizer_select(model, args)
     scheduler = shceduler_select(optimizer, dataloader_dict, args)
-    criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
+    criterion = nn.CrossEntropyLoss()
     scaler = GradScaler()
 
     # 3) Model resume
@@ -127,7 +128,7 @@ def augment_training(args):
     #=========Model Train Start=========#
     #===================================#
 
-    best_val_acc = 0
+    best_val_loss = 1e+10
 
     write_log(logger, 'Train start!')
 
@@ -138,7 +139,7 @@ def augment_training(args):
         model = model.train()
 
         for i, input_ in enumerate(tqdm(dataloader_dict['train'], 
-                                   bar_format='{l_bar}{bar:30}{r_bar}{bar:-30}')):
+                                   bar_format='{percentage:3.2f}%|{bar:50}{r_bar}')):
 
             #===================================#
             #============Train Epoch============#
@@ -166,7 +167,7 @@ def augment_training(args):
             loss = criterion(out, labels)
 
             # Back-propagation
-            scaler.scale(total_loss).backward()
+            scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             clip_grad_norm_(model.parameters(), args.clip_grad_norm)
             scaler.step(optimizer)
@@ -175,7 +176,7 @@ def augment_training(args):
             if args.scheduler in ['constant', 'warmup']:
                 scheduler.step()
             if args.scheduler == 'reduce_train':
-                scheduler.step(total_loss)
+                scheduler.step(loss)
 
             # Print loss value only training
             acc = sum(labels == out.max(dim=1)[1]) / len(labels)
@@ -200,7 +201,7 @@ def augment_training(args):
 
         with torch.no_grad():
             for i, input_ in enumerate(tqdm(dataloader_dict['valid'],
-                                       bar_format='{l_bar}{bar:30}')):
+                                       bar_format='{percentage:3.2f}%|{bar:50}{r_bar}')):
 
                 # Input, output setting
                 if len(input_) == 3:
@@ -231,13 +232,17 @@ def augment_training(args):
         write_log(logger, 'Validation Loss: %3.3f' % val_loss)
         write_log(logger, 'Validation Accuracy: %3.2f%%' % val_acc)
 
-        if val_acc > best_val_acc:
+        # Reduce Validation Scheduler
+        if args.scheduler == 'reduce_valid':
+            scheduler.step(val_loss)
+
+        if val_loss < best_val_loss:
             write_log(logger, 'Checkpoint saving...')
             # Checkpoint path setting
             if not os.path.exists(args.save_path):
                 os.mkdir(args.save_path)
             # Save
-            save_name = f'{args.dataset}_{args.model_type}_cls_checkpoint.pth.tar'
+            save_name = f'{args.dataset}_{args.cls_model_type}_aug_{args.train_with_augmentation}_cls_checkpoint.pth.tar'
             torch.save({
                 'epoch': epoch,
                 'model': model.state_dict(),
@@ -245,8 +250,8 @@ def augment_training(args):
                 'scheduler': scheduler.state_dict(),
                 'scaler': scaler.state_dict()
             }, os.path.join(args.save_path, save_name))
-            best_val_acc = val_acc
+            best_val_loss = val_loss
             best_epoch = epoch
         else:
-            else_log = f'Still {best_epoch} epoch accuracy({round(best_val_acc, 2)})% is better...'
+            else_log = f'Still {best_epoch+1} epoch loss({round(best_val_loss, 2)}) is better...'
             write_log(logger, else_log)

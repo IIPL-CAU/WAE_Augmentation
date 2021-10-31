@@ -10,16 +10,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
-from torch.nn.utils import clip_grad_norm_
 # Import Huggingface
 from transformers import BertTokenizer
 # Import Custom Modules
 from model.wae.dataset import CustomDataset, PadCollate
 from model.wae.model import TransformerWAE, Discirminator_model
 from model.wae.loss import mmd, sample_z, log_density_igaussian
-from optimizer.utils import shceduler_select, optimizer_select
 from utils import TqdmLoggingHandler, write_log
 
 def augmentation(args):

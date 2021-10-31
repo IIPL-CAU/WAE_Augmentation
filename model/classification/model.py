@@ -1,21 +1,24 @@
+# Import PyTorch
+import torch.nn as nn
+# Import Custom Modules
 from model.classification.cnn import ClassifierCNN
 from model.classification.rnn import ClassifierRNN
 from model.classification.bert import ClassifierBERT
 
 class Classifier(nn.Module):
-    def __init__(self, model_type, isPreTrain):
+    def __init__(self, model_type, isPreTrain, num_class):
         super().__init__()
 
         self.model_type = model_type
 
-        if model_type == 'CNN':
-            self.model = ClassifierCNN()
+        # if model_type == 'CNN':
+        #     self.model = ClassifierCNN()
 
-        if model_type == 'RNN':
-            self.model = ClassifierRNN()
+        # if model_type == 'RNN':
+        #     self.model = ClassifierRNN()
 
         if model_type == 'BERT':
-            self.model = ClassifierBERT()
+            self.model = ClassifierBERT(isPreTrain=isPreTrain, num_class=num_class)
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None):
 

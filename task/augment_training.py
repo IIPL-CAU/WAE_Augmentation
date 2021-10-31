@@ -3,6 +3,7 @@ import os
 import time
 import pickle
 import logging
+import pandas as pd
 from tqdm import tqdm
 # Import PyTorch
 import torch
@@ -31,14 +32,16 @@ def augment_training(args):
     logger.addHandler(handler)
     logger.propagate = False
 
-    write_log(logger, "Augmenting Start")
+    write_log(logger, "Augmentation Training Start")
 
     #===================================#
     #============Data Load==============#
     #===================================#
 
     # 1) Data open
-    with open(f'{args.preprocess_path}/{args.dataset}_{args.model_type}_preprocessed.pkl', 'rb') as f:
+    processed_path = os.path.join(args.preprocess_path, 
+                                  f'{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
+    with open(processed_path, 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
         train_attention_mask = data_['train']['attention_mask']
@@ -129,7 +132,7 @@ def augment_training(args):
         model = model.train()
 
         for i, input_ in enumerate(tqdm(dataloader_dict['train'], 
-                                   bar_format='{l_bar}{bar:30}{r_bar}{bar:-30}')):
+                                   bar_format='{percentage:3.2f}%|{bar:50}{r_bar}')):
 
             #===================================#
             #============Train Epoch============#
@@ -236,7 +239,7 @@ def augment_training(args):
 
         with torch.no_grad():
             for i, input_ in enumerate(tqdm(dataloader_dict['valid'],
-                                       bar_format='{l_bar}{bar:30}')):
+                                       bar_format='{percentage:3.2f}%|{bar:50}{r_bar}')):
 
                 # Input, output setting
                 if len(input_) == 3:
@@ -273,7 +276,7 @@ def augment_training(args):
                     'original': original_list,
                     'generated': generated_list
                 })
-                save_path = os.path.join(args.augmentation_path, path_, f'{args.epoch}.csv')
+                save_path = os.path.join(args.augmentation_path, path_, f'{epoch}.csv')
                 generated_dat.to_csv(save_path, index=False)
 
         # Show Example
@@ -301,7 +304,7 @@ def augment_training(args):
             if not os.path.exists(args.save_path):
                 os.mkdir(args.save_path)
             # Save
-            save_name = f'{args.dataset}_{args.model_type}_wae_checkpoint.pth.tar'
+            save_name = f'{args.dataset}_{args.model_type}_wae_PLM_{args.PLM_use}_checkpoint.pth.tar'
             torch.save({
                 'epoch': epoch,
                 'model': model.state_dict(),
