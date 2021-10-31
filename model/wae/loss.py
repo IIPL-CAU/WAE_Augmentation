@@ -4,7 +4,7 @@ def sample_z(args, n_sample=None, dim=None, sigma=None, template=None):
     if n_sample is None:
         n_sample = args.batch_size
     if dim is None:
-        dim = args.d_model
+        dim = 768
     if sigma is None:
         sigma = math.sqrt(args.z_var)
 

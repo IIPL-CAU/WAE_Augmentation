@@ -84,8 +84,8 @@ class TransformerWAE(nn.Module):
             raise ValueError('not supported')
 
         # For latent mapping
-        self.hidden2latent = nn.Linear(self.d_hidden, self.d_latent)
-        self.latent2hidden = nn.Linear(self.d_latent, self.d_hidden)
+        # self.hidden2latent = nn.Linear(self.d_hidden, self.d_latent)
+        # self.latent2hidden = nn.Linear(self.d_latent, self.d_hidden)
 
     def forward(self, input_ids, attention_mask, token_type_ids=None):
 
@@ -101,12 +101,8 @@ class TransformerWAE(nn.Module):
             wae_enc_out = self.encoder1_final_layer_norm(wae_enc_out)
             wae_enc_out = self.encoder1_dropout(wae_enc_out)
 
-            # Linear
-            wae_enc_out = self.hidden2latent(wae_enc_out)
-            wae_dec_out = self.latent2hidden(wae_enc_out)
-
             # Encoder2 Forward
-            wae_dec_out = self.encoder2_model(inputs_embeds=wae_dec_out, 
+            wae_dec_out = self.encoder2_model(inputs_embeds=wae_enc_out, 
                                               attention_mask=attention_mask)
             wae_dec_out = wae_dec_out['last_hidden_state']
 

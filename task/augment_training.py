@@ -84,14 +84,14 @@ def augment_training(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
-    model = TransformerWAE(model_type=args.model_type, isPreTrain=args.PLM_use,
+    model = TransformerWAE(model_type=args.aug_model_type, isPreTrain=args.aug_PLM_use,
                            d_latent=args.d_latent, device=device)
     model = model.train()
     model = model.to(device)
     
     # 1-1) Discriminator for WAE-GAN Mode
     if args.WAE_loss == 'gan':
-        D_model = Discirminator_model(model_type=args.model_type, isPreTrain=args.PLM_use,
+        D_model = Discirminator_model(model_type=args.aug_model_type, isPreTrain=args.aug_PLM_use,
                                       device=device, class_token='first_token')
         D_model = D_model.train()
         D_model = D_model.to(device)
@@ -225,15 +225,16 @@ def augment_training(args):
         #=========Validation Epoch==========#
         #===================================#
 
+        write_log(logger, 'Validation...')
+
         # Validation setting
         model = model.eval()
         val_loss = 0
         val_acc = 0
 
         # Save setting
-        original_list = list()
-        generated_list = list()
-        path_ = f'{args.dataset}_{args.model_type}_wae_PLM_{args.PLM_use}'
+        original_list, generated_list = list(), list()
+        path_ = f'{args.dataset}_{args.aug_model_type}_wae_PLM_{args.aug_PLM_use}'
         if not os.path.exists(os.path.join(args.augmentation_path, path_)):
             os.mkdir(os.path.join(args.augmentation_path, path_))
 
@@ -270,19 +271,13 @@ def augment_training(args):
                 val_acc += acc
 
                 # Generated sample save
-                original_list.extend(model.tokenizer.batch_decode(input_ids, skip_special_tokens=True))
-                generated_list.extend(model.tokenizer.batch_decode(model_out.max(dim=2)[1], skip_special_tokens=True))
-                generated_dat = pd.DataFrame({
-                    'original': original_list,
-                    'generated': generated_list
-                })
-                save_path = os.path.join(args.augmentation_path, path_, f'{epoch}.csv')
-                generated_dat.to_csv(save_path, index=False)
+                original_list.extend(input_ids.tolist())
+                generated_list.extend(model_out.max(dim=2)[1].tolist())
 
         # Show Example
         original_sent = model.tokenizer.batch_decode(input_ids, skip_special_tokens=True)
         generated_sent = model.tokenizer.batch_decode(model_out.max(dim=2)[1], skip_special_tokens=True)
-        with open(f'example_{args.dataset}_{args.model_type}_{args.WAE_loss}.txt', 'a') as f:
+        with open(f'example_{args.dataset}_{args.aug_model_type}_{args.WAE_loss}.txt', 'a') as f:
             f.write(f'epoch: {epoch} \n')
             f.write('Original Sentence\n')
             f.write(f'{original_sent[0]}\n')
@@ -298,13 +293,29 @@ def augment_training(args):
         write_log(logger, 'Validation Loss: %3.3f' % val_loss)
         write_log(logger, 'Validation Accuracy: %3.2f%%' % val_acc)
 
+        write_log(logger, 'Decoding...')
+
+        original_decoded, generated_decoded = list(), list()
+
+        for i in tqdm(range(50), bar_format='{percentage:3.2f}%|{bar:50}{r_bar}'):
+
+            original_decoded.append(model.tokenizer.decode(original_list[i], skip_special_tokens=True))
+            generated_decoded.append(model.tokenizer.decode(generated_list[i], skip_special_tokens=True))
+            
+            generated_dat = pd.DataFrame({
+                'original': original_decoded,
+                'generated': generated_decoded
+            })
+            save_path = os.path.join(args.augmentation_path, path_, f'{epoch}.csv')
+            generated_dat.to_csv(save_path, index=False)
+
         if val_acc > best_val_acc:
             write_log(logger, 'Checkpoint saving...')
             # Checkpoint path setting
             if not os.path.exists(args.save_path):
                 os.mkdir(args.save_path)
             # Save
-            save_name = f'{args.dataset}_{args.model_type}_wae_PLM_{args.PLM_use}_checkpoint.pth.tar'
+            save_name = f'{args.dataset}_{args.aug_model_type}_wae_PLM_{args.aug_PLM_use}_checkpoint.pth.tar'
             torch.save({
                 'epoch': epoch,
                 'model': model.state_dict(),

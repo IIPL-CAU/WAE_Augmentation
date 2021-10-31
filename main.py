@@ -59,6 +59,8 @@ if __name__=='__main__':
     parser.add_argument('--augmentation_path', default='/HDD/kyohoon/WAE/augmentation', type=str,
                         help='Augmented file path')
     # Preprocessing setting
+    parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
+                        help='Tokenizer settings; Default is T5')
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
     parser.add_argument('--valid_split_ratio', default=0.2, type=float,
@@ -77,22 +79,15 @@ if __name__=='__main__':
                         help='Minimum length of sequence; Default is 4')
     parser.add_argument('--max_len', default=300, type=int,
                         help='Maximum length of sequence; Default is 300')
-    # Model setting
-    parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
-                        help='Tokenizer settings; Default is T5')
+    # WAE setting
     parser.add_argument('--aug_model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
                         help='Model settings; Default is T5')
-    parser.add_argument('--classifier_model_type', default='CNN', type=str, choices=['CNN', 'RNN', 'BERT'],
-                        help='Classifier model settings; Default is CNN')
-    parser.add_argument('--d_model', default=768, type=int, 
-                        help='Transformer model dimension; Default is 512')
-    parser.add_argument('--d_latent', default=256, type=int, 
-                        help='Latent space dimension; Default is 256')
-    parser.add_argument('--clip_grad_norm', default=5, type=int, 
-                        help='Graddient clipping norm; Default is 5')
-    # WAE setting
+    parser.add_argument('--aug_PLM_use', default=True, type=str2bool,
+                        help='Model settings; Default is T5')
     parser.add_argument('--WAE_loss', default='mmd', choices=['mmd', 'gan'],
                         help='Wasserstein Auto-encoder Loss Type; Default is mmd')
+    parser.add_argument('--d_latent', default=256, type=int,
+                        help='Latent space dimension; Default is 256')
     parser.add_argument('--z_var', default=2, type=int,
                         help='Default is 2')
     parser.add_argument('--loss_lambda', default=100, type=int,
@@ -116,6 +111,8 @@ if __name__=='__main__':
                         help="Ralamb's weight decay; Default is 1e-5")
     parser.add_argument('--label_smoothing', default=0.05, type=float,
                         help="Label smoothing ratio; Default is 0.05")
+    parser.add_argument('--clip_grad_norm', default=5, type=int, 
+                        help='Graddient clipping norm; Default is 5')
     # Optimizer & LR_Scheduler setting
     optim_list = ['AdamW', 'Adam', 'SGD', 'Ralamb']
     scheduler_list = ['constant', 'warmup', 'reduce_train', 'reduce_valid', 'lambda']
