@@ -12,7 +12,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 # Import Huggingface
-from transformers import BertTokenizer
+from transformers import BertTokenizerFast
 # Import Custom Modules
 from model.wae.dataset import CustomDataset, PadCollate
 from model.wae.model import TransformerWAE, Discirminator_model
@@ -150,7 +150,7 @@ def augmentation(args):
     aug_dat.to_csv(os.path.join(args.augmentation_path, data_name))
 
     # Pickle Save
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased')
     encoded_out = tokenizer(
         total_sentence_list,
         max_length=args.max_len,

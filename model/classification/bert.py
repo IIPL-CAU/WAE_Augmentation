@@ -8,7 +8,7 @@ class ClassifierBERT(nn.Module):
             self.model = BertForSequenceClassification.from_pretrained('bert-base-cased')
             self.model.classifier = nn.Linear(768, num_class)
         else:
-            model_config = BertConfig('bert-base-cased')
+            model_config = BertConfig('bert-base-uncased')
             self.model = BertForSequenceClassification(config=model_config)
             self.model.classifier = nn.Linear(768, num_class)
 

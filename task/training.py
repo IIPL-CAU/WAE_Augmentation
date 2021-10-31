@@ -37,7 +37,9 @@ def training(args):
     #===================================#
 
     # 1) Data Open
-    with open(f'{args.preprocess_path}/{args.dataset}_{args.cls_model_type}_preprocessed.pkl', 'rb') as f:
+    processed_path = os.path.join(args.preprocess_path, 
+                                    f'{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
+    with open(processed_path, 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
         train_attention_mask = data_['train']['attention_mask']
@@ -55,11 +57,12 @@ def training(args):
 
     # 2) Augmented Data Open
     if args.train_with_augmentation:
-        with open(f'{args.preprocess_path}/{args.dataset}_{args.aug_model_type}_preprocessed.pkl', 'rb') as f:
+        data_name = f'{args.dataset}_{args.aug_model_type}_aug_preprocessed.pkl'
+        with open(os.path.join(args.preprocess_path, data_name), 'rb') as f:
             data_ = pickle.load(f)
             train_input_ids = train_input_ids + data_['augmented']['input_ids']
             train_attention_mask = train_attention_mask + data_['augmented']['attention_mask']
-            train_label = train_label + data_['augmented']['label']
+            train_label = train_label.tolist() + data_['augmented']['label']
             if args.tokenizer in ['T5', 'Bart']:
                 train_token_type_ids = None
             else:
