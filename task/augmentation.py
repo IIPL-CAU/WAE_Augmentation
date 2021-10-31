@@ -38,7 +38,9 @@ def augmentation(args):
     #===================================#
 
     # 1) Data open
-    with open(f'{args.preprocess_path}/{args.dataset}_{args.model_type}_preprocessed.pkl', 'rb') as f:
+    processed_path = os.path.join(args.preprocess_path, 
+                                  f'{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
+    with open(processed_path, 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
         train_attention_mask = data_['train']['attention_mask']
@@ -75,16 +77,16 @@ def augmentation(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
-    model = TransformerWAE(model_type=args.model_type, isPreTrain=args.PLM_use,
+    model = TransformerWAE(model_type=args.aug_model_type, isPreTrain=args.aug_PLM_use,
                            d_latent=args.d_latent, device=device)
     
     # 1-1) Discriminator for WAE-GAN Mode
     if args.WAE_loss == 'gan':
-        D_model = Discirminator_model(model_type=args.model_type, isPreTrain=args.PLM_use,
+        D_model = Discirminator_model(model_type=args.aug_model_type, isPreTrain=args.aug_PLM_use,
                                       device=device, class_token='first_token')
 
     # 2) Model load
-    save_name = f'{args.dataset}_{args.model_type}_wae_checkpoint.pth.tar'
+    save_name = f'{args.dataset}_{args.aug_model_type}_wae_PLM_{args.aug_PLM_use}_checkpoint.pth.tar'
     checkpoint = torch.load(os.path.join(args.save_path, save_name), map_location='cpu')
     model.load_state_dict(checkpoint['model'])
     model = model.eval()
@@ -93,7 +95,7 @@ def augmentation(args):
 
     # 2-1) Discriminator model load
     if args.WAE_loss == 'gan':
-        save_name_d = f'{args.dataset}_{args.model_type}_wae_discriminator_checkpoint.pth.tar'
+        save_name_d = f'{args.dataset}_{args.aug_model_type}_wae_discriminator_checkpoint.pth.tar'
         checkpoint_d = torch.load(os.path.join(args.save_path, save_name_d), map_location='cpu')
         model.load_state_dict(checkpoint['model'])
         D_model = D_model.eval()
@@ -111,7 +113,7 @@ def augmentation(args):
 
     with torch.no_grad():
         for i, input_ in enumerate(tqdm(dataloader_dict['train'],
-                                   bar_format='{l_bar}{bar:30}')):
+                                   bar_format='{percentage:3.2f}%|{bar:50}{r_bar}')):
 
             # Input, output setting
             if len(input_) == 3:
@@ -132,15 +134,15 @@ def augmentation(args):
             generated_sent = model.tokenizer.batch_decode(model_out.max(dim=2)[1], skip_special_tokens=True)
 
             # Append
-            total_sentence_list.append(generated_sent)
-            total_label_list.append(label_list)
+            total_sentence_list.extend(generated_sent)
+            total_label_list.extend(label_list)
 
     #===================================#
     #===============Save================#
     #===================================#
 
     # CSV Save
-    data_name = f'{args.dataset}_{args.model_type}_{args.WAE_loss}.csv'
+    data_name = f'{args.dataset}_{args.aug_model_type}_{args.WAE_loss}.csv'
     aug_dat = pd.DataFrame({
         'description': total_sentence_list,
         'label': total_label_list
@@ -157,7 +159,7 @@ def augmentation(args):
     )
     encoded_out['label'] = total_label_list
 
-    data_name = f'{args.dataset}_{args.model_type}_aug_preprocessed.pkl'
+    data_name = f'{args.dataset}_{args.aug_model_type}_aug_preprocessed.pkl'
     with open(os.path.join(args.preprocess_path, data_name), 'wb') as f:
         pickle.dump({
             'augmented': {

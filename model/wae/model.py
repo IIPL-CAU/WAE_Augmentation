@@ -4,11 +4,11 @@ import torch
 import torch.nn as nn
 # Import Huggingface
 # T5
-from transformers import T5ForConditionalGeneration, T5EncoderModel, T5Config, T5Tokenizer
+from transformers import T5ForConditionalGeneration, T5EncoderModel, T5Config, T5TokenizerFast
 # Bart
-from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
+from transformers import BartTokenizerFast, BartForConditionalGeneration, BartConfig
 # BERT
-from transformers import BertTokenizer
+from transformers import BertTokenizerFast
 
 class TransformerWAE(nn.Module):
     def __init__(self, model_type, isPreTrain, d_latent, device):
@@ -33,7 +33,7 @@ class TransformerWAE(nn.Module):
         self.device = device
 
         if self.model_type == 'T5':
-            self.tokenizer = T5Tokenizer.from_pretrained("t5-small")
+            self.tokenizer = T5TokenizerFast.from_pretrained("t5-small")
             if self.isPreTrain:
                 self.model1 = T5ForConditionalGeneration.from_pretrained('t5-small')
                 self.model2 = T5ForConditionalGeneration.from_pretrained('t5-small')
@@ -57,7 +57,7 @@ class TransformerWAE(nn.Module):
             self.vocab_size = self.model2.lm_head.out_features
             self.lm_head = self.model2.lm_head
         elif self.model_type == 'Bart':
-            self.tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
+            self.tokenizer = BartTokenizerFast.from_pretrained('facebook/bart-base')
             if self.isPreTrain:
                 self.model1 = BartForConditionalGeneration.from_pretrained('facebook/bart-base')
                 self.model2 = BartForConditionalGeneration.from_pretrained('facebook/bart-base')
@@ -79,7 +79,7 @@ class TransformerWAE(nn.Module):
             self.lm_head = self.model2.lm_head
         elif self.model_type == 'BERT':
             # To Do
-            self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+            self.tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
         else:
             raise ValueError('not supported')
 

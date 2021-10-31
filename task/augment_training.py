@@ -297,7 +297,7 @@ def augment_training(args):
 
         original_decoded, generated_decoded = list(), list()
 
-        for i in tqdm(range(50), bar_format='{percentage:3.2f}%|{bar:50}{r_bar}'):
+        for i in tqdm(range(len(original_list)), bar_format='{percentage:3.2f}%|{bar:50}{r_bar}'):
 
             original_decoded.append(model.tokenizer.decode(original_list[i], skip_special_tokens=True))
             generated_decoded.append(model.tokenizer.decode(generated_list[i], skip_special_tokens=True))
