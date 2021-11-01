@@ -158,7 +158,7 @@ def augment_training(args):
             # Loss calculate
             recon_loss = F.cross_entropy(model_out.view(-1, model_out.size(-1)), 
                                          input_ids.contiguous().view(-1), 
-                                         ignore_index=args.pad_idx)
+                                         ignore_index=model.tokenizer.pad_token_id)
             if args.WAE_loss == 'mmd':
                 mmd_loss = mmd(wae_enc_out.view(args.batch_size, -1), 
                                z.view(args.batch_size, -1), 
@@ -258,7 +258,7 @@ def augment_training(args):
                 # Loss calculate
                 recon_loss = F.cross_entropy(model_out.view(-1, model_out.size(-1)), 
                                             input_ids.contiguous().view(-1), 
-                                            ignore_index=args.pad_idx)
+                                            ignore_index=model.tokenizer.pad_token_id)
                 mmd_loss = mmd(wae_enc_out.view(args.batch_size, -1), 
                                z.view(args.batch_size, -1), 
                                z_var=args.z_var)

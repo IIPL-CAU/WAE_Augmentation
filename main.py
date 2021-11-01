@@ -6,7 +6,7 @@ from task.preprocessing import preprocessing
 from task.augment_training import augment_training
 from task.augmentation import augmentation
 from task.training import training
-# from task.testing import testing
+from task.testing import testing
 from utils import str2bool, path_check
 
 def main(args):
@@ -30,8 +30,8 @@ def main(args):
     if args.training:
         training(args)
 
-    # if args.testing:
-    #     testing(args)
+    if args.testing:
+        testing(args)
 
     # Time calculate
     print(f'Done! ; {round((time()-total_start_time)/60, 3)}min spend')

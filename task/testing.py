@@ -53,7 +53,7 @@ def testing(args):
                                  token_type_ids_list=test_token_type_ids,
                                  min_len=args.min_len, max_len=args.max_len)
     test_dataloader = DataLoader(test_dataset, collate_fn=PadCollate(args.tokenizer),
-                                 drop_last=False, batch_size=args.test_batch_size, shuffle=False,
+                                 drop_last=False, batch_size=args.batch_size, shuffle=False,
                                  pin_memory=True, num_workers=args.num_workers)
 
     print_text = f"Total number of testsets iterations - {len(test_dataset)}, {len(test_dataloader)}"
@@ -66,11 +66,11 @@ def testing(args):
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
     model = Classifier(model_type=args.cls_model_type, isPreTrain=args.cls_PLM_use,
-                       num_class=len(set(train_label)))
+                       num_class=len(set(test_label)))
 
     # 2) Model load
     write_log(logger, "Loading models...")
-    save_name = f'{args.dataset}_{args.model_type}_cls_checkpoint.pth.tar'
+    save_name = f'{args.dataset}_{args.cls_model_type}_aug_{args.train_with_augmentation}_cls_checkpoint.pth.tar'
     checkpoint = torch.load(os.path.join(args.save_path, save_name), map_location='cpu')
     model.load_state_dict(checkpoint['model'])
     model = model.eval()
@@ -86,31 +86,34 @@ def testing(args):
     total_loss = 0
     total_acc = 0
     
-    for i, input_ in enumerate(tqdm(test_dataloader, 
-                                bar_format='{percentage:3.2f}%|{bar:50}{r_bar}')):
+    with torch.no_grad():
+        for i, input_ in enumerate(tqdm(test_dataloader, 
+                                    bar_format='{percentage:3.2f}%|{bar:50}{r_bar}')):
 
-        # Input, output setting
-        if len(input_) == 3:
-            input_ids = input_[0].to(device, non_blocking=True)
-            attention_mask = input_[1].to(device, non_blocking=True)
-            labels = input_[2].to(device, non_blocking=True)
-            token_type_ids = None
-        if len(input_) == 4:
-            input_ids = input_[0].to(device, non_blocking=True)
-            token_type_ids = input_[1].to(device, non_blocking=True)
-            attention_mask = input_[2].to(device, non_blocking=True)
-            labels = input_[3].to(device, non_blocking=True)
+            # Input, output setting
+            if len(input_) == 3:
+                input_ids = input_[0].to(device, non_blocking=True)
+                attention_mask = input_[1].to(device, non_blocking=True)
+                labels = input_[2].to(device, non_blocking=True)
+                token_type_ids = None
+            if len(input_) == 4:
+                input_ids = input_[0].to(device, non_blocking=True)
+                token_type_ids = input_[1].to(device, non_blocking=True)
+                attention_mask = input_[2].to(device, non_blocking=True)
+                labels = input_[3].to(device, non_blocking=True)
 
-        # Model
-        out = model(input_ids, attention_mask, token_type_ids)
+            # Model
+            out = model(input_ids, attention_mask, token_type_ids)
 
-        # Accuracy & Loss
-        acc = sum(labels == out.max(dim=1)[1]) / len(labels)
-        acc = acc.item() * 100
-        total_loss += loss.item()
-        total_acc += acc
+            # Accuracy & Loss
+            acc = sum(labels == out.max(dim=1)[1]) / len(labels)
+            acc = acc.item() * 100
+            total_acc += acc
 
-    val_loss /= len(test_dataloader)
-    val_acc /= len(test_dataloader)
-    write_log(logger, 'Test Loss: %3.3f' % val_loss)
-    write_log(logger, 'Test Accuracy: %3.2f%%' % val_acc)
+            loss = F.cross_entropy(out, labels)
+            total_loss += loss
+
+    total_loss /= len(test_dataloader)
+    total_acc /= len(test_dataloader)
+    write_log(logger, 'Test Loss: %3.3f' % total_loss)
+    write_log(logger, 'Test Accuracy: %3.2f%%' % total_acc)
