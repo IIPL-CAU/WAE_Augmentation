@@ -63,8 +63,8 @@ if __name__=='__main__':
                         help='Tokenizer settings; Default is T5')
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
-    parser.add_argument('--valid_split_ratio', default=0.2, type=float,
-                        help='Validation dataset split ratio; Default is 0.2')
+    parser.add_argument('--valid_split_ratio', default=0.05, type=float,
+                        help='Validation dataset split ratio; Default is 0.05')
     parser.add_argument('--vocab_size', default=8000, type=int, 
                         help='Source language vocabulary size; Default is 8000')
     parser.add_argument('--pad_idx', default=0, type=int,

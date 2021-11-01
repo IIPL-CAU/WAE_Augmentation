@@ -8,7 +8,7 @@ from transformers import T5ForConditionalGeneration, T5EncoderModel, T5Config, T
 # Bart
 from transformers import BartTokenizerFast, BartForConditionalGeneration, BartConfig
 # BERT
-from transformers import BertTokenizerFast
+from transformers import BertTokenizerFast, BertModel, BertForMaskedLM, BertConfig
 
 class TransformerWAE(nn.Module):
     def __init__(self, model_type, isPreTrain, d_latent, device):
@@ -79,7 +79,44 @@ class TransformerWAE(nn.Module):
             self.lm_head = self.model2.lm_head
         elif self.model_type == 'BERT':
             # To Do
-            self.tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
+            self.tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased')
+            if self.isPreTrain:
+                # Encoder Setting
+                self.encoder_model = BertModel.from_pretrained('bert-base-cased')
+                # Dimension Setting
+                self.d_hidden = self.encoder_model.embeddings.word_embeddings.embedding_dim
+                # Decoder Setting
+                self.decoder_model = BertForMaskedLM.from_pretrained('bert-base-cased')
+            else:
+                # Config Setting
+                model_config = BertConfig('bert-base-cased')
+                model_config.vocab_size = 30522
+                # Encoder Setting
+                self.encoder_model = BertModel(config=model_config)
+                # Dimension Setting
+                self.d_hidden = self.encoder_model.embeddings.word_embeddings.embedding_dim
+                # Decoder Setting
+                self.decoder_model = BertForMaskedLM(config=model_config)
+        elif self.model_type == 'BERT+GPT2':
+            # To Do
+            self.tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased')
+            if self.isPreTrain:
+                # Encoder Setting
+                self.encoder_model = BertModel.from_pretrained('bert-base-cased')
+                # Dimension Setting
+                self.d_hidden = self.encoder_model.embeddings.word_embeddings.embedding_dim
+                # Decoder Setting
+                self.decoder_model = BertForMaskedLM.from_pretrained('bert-base-cased')
+            else:
+                # Config Setting
+                model_config = BertConfig('bert-base-cased')
+                model_config.vocab_size = 30522
+                # Encoder Setting
+                self.encoder_model = BertModel(config=model_config)
+                # Dimension Setting
+                self.d_hidden = self.encoder_model.embeddings.word_embeddings.embedding_dim
+                # Decoder Setting
+                self.decoder_model = BertForMaskedLM(config=model_config)
         else:
             raise ValueError('not supported')
 
@@ -88,6 +125,10 @@ class TransformerWAE(nn.Module):
         # self.latent2hidden = nn.Linear(self.d_latent, self.d_hidden)
 
     def forward(self, input_ids, attention_mask, token_type_ids=None):
+
+    #===================================#
+    #=============== T5 ================#
+    #===================================#
 
         if self.model_type == 'T5':
             # Encoder1 Forward
@@ -115,6 +156,10 @@ class TransformerWAE(nn.Module):
 
             return wae_enc_out, wae_dec_out, model_out
 
+    #===================================#
+    #===============Bart================#
+    #===================================#
+
         elif self.model_type == 'Bart':
             # Encoder1 Forward
             wae_enc_out = self.encoder1_model(input_ids=input_ids,
@@ -132,6 +177,45 @@ class TransformerWAE(nn.Module):
                                            encoder_hidden_states=wae_dec_out,
                                            encoder_attention_mask=attention_mask)
             model_out = self.lm_head(model_out['last_hidden_state'])
+
+            return wae_enc_out, wae_dec_out, model_out
+
+    #===================================#
+    #===============BERT================#
+    #===================================#
+
+        elif self.model_type == 'BERT':
+            # Encoder Forward
+            wae_enc_out = self.encoder_model(input_ids=input_ids,
+                                             attention_mask=attention_mask,
+                                             token_type_ids=token_type_ids)
+            wae_enc_out = wae_enc_out['last_hidden_state']
+            # + MMD Loss
+
+            # Decoder Forward
+            wae_dec_out = self.decoder_model(inputs_embeds=wae_enc_out, 
+                                              attention_mask=attention_mask,
+                                              token_type_ids=token_type_ids)
+            model_out = wae_dec_out['logits']
+
+            return wae_enc_out, wae_dec_out, model_out
+
+    #===================================#
+    #=============BERT+GPT2=============#
+    #===================================#
+
+        elif self.model_type == 'BERT+GPT2':
+            # Encoder Forward
+            wae_enc_out = self.encoder_model(input_ids=input_ids,
+                                             attention_mask=attention_mask,
+                                             token_type_ids=token_type_ids)
+            wae_enc_out = wae_enc_out['last_hidden_state']
+
+            # Decoder Forward
+            wae_dec_out = self.decoder_model(inputs_embeds=wae_enc_out, 
+                                              attention_mask=attention_mask,
+                                              token_type_ids=token_type_ids)
+            model_out = wae_dec_out['logits']
 
             return wae_enc_out, wae_dec_out, model_out
 

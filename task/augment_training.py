@@ -152,7 +152,7 @@ def augment_training(args):
                 attention_mask = input_[2].to(device, non_blocking=True)
 
             # Model
-            wae_enc_out, wae_dec_out, model_out = model(input_ids, attention_mask, token_type_ids)
+            wae_enc_out, _, model_out = model(input_ids, attention_mask, token_type_ids)
             z = sample_z(args=args, template=wae_enc_out)
 
             # Loss calculate
@@ -253,7 +253,7 @@ def augment_training(args):
                     attention_mask = input_[2].to(device, non_blocking=True)
 
                 # Model
-                wae_enc_out, wae_dec_out, model_out = model(input_ids, attention_mask)
+                wae_enc_out, _, model_out = model(input_ids, attention_mask)
 
                 # Loss calculate
                 recon_loss = F.cross_entropy(model_out.view(-1, model_out.size(-1)), 
