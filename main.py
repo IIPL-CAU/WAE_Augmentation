@@ -46,9 +46,9 @@ if __name__=='__main__':
     parser.add_argument('--testing', action='store_true')
     parser.add_argument('--resume', action='store_true')
     # Data setting
-    data_ = ['IMDB', 'Yelp', 'DBPia', 'AG_News', 'SST2', 'SST5', 'ProsCons', 'SUBJ', 'TREC', 'MR']
+    data_ = ['IMDB', 'Yelp_Full', 'DBpedia', 'AG_News', 'SST2', 'SST5', 'ProsCons', 'SUBJ', 'TREC', 'MR']
     parser.add_argument('--dataset', type=str, choices=data_,
-                        help='Dataset select; [IMDB, Yelp, DBPia, AG_News, SST2, SST5, ProsCons, SUBJ, TREC, MR]')
+                        help='Dataset select; [IMDB, Yelp_Full, DBpedia, AG_News, SST2, SST5, ProsCons, SUBJ, TREC, MR]')
     # Path setting
     parser.add_argument('--data_path', default='/HDD/dataset/text_classification', type=str,
                         help='Original data path')
@@ -59,8 +59,6 @@ if __name__=='__main__':
     parser.add_argument('--augmentation_path', default='/HDD/kyohoon/WAE/augmentation', type=str,
                         help='Augmented file path')
     # Preprocessing setting
-    parser.add_argument('--tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
-                        help='Tokenizer settings; Default is T5')
     parser.add_argument('--sentencepiece_model', default='unigram', choices=['unigram', 'bpe', 'word', 'char'],
                         help="Google's SentencePiece model type; Default is unigram")
     parser.add_argument('--valid_split_ratio', default=0.05, type=float,
@@ -80,6 +78,8 @@ if __name__=='__main__':
     parser.add_argument('--max_len', default=300, type=int,
                         help='Maximum length of sequence; Default is 300')
     # WAE setting
+    parser.add_argument('--aug_tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
+                        help='Tokenizer settings; Default is T5')
     parser.add_argument('--aug_model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
                         help='Model settings; Default is T5')
     parser.add_argument('--aug_PLM_use', default=True, type=str2bool,
@@ -95,6 +95,8 @@ if __name__=='__main__':
     # Training setting
     parser.add_argument('--train_with_augmentation', default=True, type=str2bool,
                         help='Text classifier training with augmentation data; Default is True')
+    parser.add_argument('--cls_tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
+                        help='Tokenizer settings; Default is T5')
     parser.add_argument('--cls_model_type', default='CNN', type=str, choices=['CNN', 'RNN', 'BERT'],
                         help='Classifier model settings; Default is CNN')
     parser.add_argument('--cls_PLM_use', default=True, type=str2bool,

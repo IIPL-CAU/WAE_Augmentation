@@ -38,7 +38,7 @@ def training(args):
 
     # 1) Data Open
     processed_path = os.path.join(args.preprocess_path, 
-                                    f'{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
+                                    f'{args.dataset}_{args.cls_tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
     with open(processed_path, 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
@@ -153,6 +153,7 @@ def training(args):
 
             # Input, output setting
             if len(input_) == 3:
+                print('how')
                 input_ids = input_[0].to(device, non_blocking=True)
                 attention_mask = input_[1].to(device, non_blocking=True)
                 labels = input_[2].to(device, non_blocking=True)
@@ -184,13 +185,13 @@ def training(args):
             # Print loss value only training
             acc = sum(labels == out.max(dim=1)[1]) / len(labels)
             acc = acc.item() * 100
-            if i == 0 or freq == args.print_freq-1 or i==len(dataloader_dict['train'])-1:
+            if i == 0 or freq == args.print_freq or i==len(dataloader_dict['train'])-1:
                 batch_log = "[Epoch:%d][%d/%d] train_loss:%2.3f | train_acc:%02.2f | learning_rate:%3.6f | spend_time:%3.2fmin" \
                         % (epoch+1, i+1, len(dataloader_dict['train']), 
                         loss.item(), acc, optimizer.param_groups[0]['lr'], 
                         (time.time() - start_time_e) / 60)
                 write_log(logger, batch_log)
-                freq = -1
+                freq = 0
             freq += 1
 
         #===================================#

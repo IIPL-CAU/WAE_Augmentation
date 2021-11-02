@@ -1,8 +1,8 @@
 import pickle
 import logging
 import sentencepiece as spm
-# from transformers import BertTokenizer, T5Tokenizer, BartTokenizer
-from transformers import BartTokenizerFast, BertTokenizerFast, T5TokenizerFast
+from transformers import BertTokenizer, T5Tokenizer, BartTokenizer
+# from transformers import BartTokenizerFast, BertTokenizerFast, T5TokenizerFast
 
 from task.utils import read_data, train_valid_split
 from utils import TqdmLoggingHandler, write_log
@@ -49,7 +49,7 @@ def preprocessing(args):
     write_log(logger, "Tokenizing Start")
 
     # SentencePiece; spm
-    if args.tokenizer == 'spm':
+    if args.aug_tokenizer == 'spm':
 
         with open(f'{args.preprocess_path}/{args.dataset}_text.txt', 'w') as f:
             for text in train_dat['total_text']:
@@ -131,12 +131,12 @@ def preprocessing(args):
     else:
 
         # Load pre-trained tokenizer
-        if args.tokenizer == 'BERT':
-            tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased')
-        elif args.tokenizer == 'T5':
-            tokenizer = T5TokenizerFast.from_pretrained("t5-base")
-        elif args.tokenizer == 'Bart':
-            tokenizer = BartTokenizerFast.from_pretrained('facebook/bart-base')
+        if args.aug_tokenizer == 'BERT':
+            tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+        elif args.aug_tokenizer == 'T5':
+            tokenizer = T5Tokenizer.from_pretrained("t5-base")
+        elif args.aug_tokenizer == 'Bart':
+            tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
 
         # Tokenizing
         if len(train_dat.columns) > 3:

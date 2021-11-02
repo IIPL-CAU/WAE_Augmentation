@@ -34,7 +34,9 @@ def testing(args):
     #===================================#
 
     # 1) Data Open
-    with open(f'{args.preprocess_path}/{args.dataset}_{args.cls_model_type}_preprocessed.pkl', 'rb') as f:
+    processed_path = os.path.join(args.preprocess_path, 
+                                    f'{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
+    with open(processed_path, 'rb') as f:
         data_ = pickle.load(f)
         test_input_ids = data_['test']['input_ids']
         test_attention_mask = data_['test']['attention_mask']

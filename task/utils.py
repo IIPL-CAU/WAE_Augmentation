@@ -31,10 +31,10 @@ def read_data(data_name: str, data_path: str):
         train_dat['total_text'] = train_dat['title'] + '[SEP]' + train_dat['description']
         test_dat['total_text'] = test_dat['title'] + '[SEP]' + test_dat['description']
 
-    if data_name == 'DBPia':
-        train_dat = pd.read_csv(os.path.join(data_path , 'DBPia/train.csv'), sep=',',
+    if data_name == 'DBpedia':
+        train_dat = pd.read_csv(os.path.join(data_path , 'DBpedia/train.csv'), sep=',',
                                 names=['label', 'title', 'description'])
-        test_dat = pd.read_csv(os.path.join(data_path , 'DBPia/test.csv'), sep=',',
+        test_dat = pd.read_csv(os.path.join(data_path , 'DBpedia/test.csv'), sep=',',
                                 names=['label', 'title', 'description'])
 
         label_dict = dict()

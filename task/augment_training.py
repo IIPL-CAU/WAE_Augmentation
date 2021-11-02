@@ -40,7 +40,7 @@ def augment_training(args):
 
     # 1) Data open
     processed_path = os.path.join(args.preprocess_path, 
-                                  f'{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
+                                  f'{args.dataset}_{args.aug_tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
     with open(processed_path, 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
@@ -206,7 +206,7 @@ def augment_training(args):
             # Print loss value only training
             acc = sum(input_ids.view(-1) == model_out.view(-1, model_out.size(-1)).max(dim=1)[1]) / len(input_ids.view(-1))
             acc = acc.item() * 100
-            if i == 0 or freq == args.print_freq-1 or i==len(dataloader_dict['train'])-1:
+            if i == 0 or freq-1 == args.print_freq or i==len(dataloader_dict['train'])-1:
                 if args.WAE_loss == 'mmd':
                     batch_log = "[Epoch:%d][%d/%d] train_recon_loss:%2.3f | train_mmd_loss:%2.3f | train_acc:%02.2f | learning_rate:%3.6f | spend_time:%3.2fmin" \
                             % (epoch+1, i+1, len(dataloader_dict['train']), 
