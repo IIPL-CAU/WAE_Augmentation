@@ -199,8 +199,8 @@ def preprocessing(args):
     # Saving
     write_log(logger, "Saving Start")
 
-    if args.tokenizer in ['T5', 'Bart']:
-        with open(f'{args.preprocess_path}/{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl', 'wb') as f:
+    if args.aug_tokenizer in ['T5', 'Bart']:
+        with open(f'{args.preprocess_path}/{args.dataset}_{args.aug_tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl', 'wb') as f:
             pickle.dump({
                 'train': {
                     'input_ids': encoded_dict['train']['input_ids'],
@@ -221,7 +221,7 @@ def preprocessing(args):
             }, f)
 
     else:
-        with open(f'{args.preprocess_path}/{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl', 'wb') as f:
+        with open(f'{args.preprocess_path}/{args.dataset}_{args.aug_tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl', 'wb') as f:
             pickle.dump({
                 'train': {
                     'input_ids': encoded_dict['train']['input_ids'],

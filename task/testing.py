@@ -35,26 +35,26 @@ def testing(args):
 
     # 1) Data Open
     processed_path = os.path.join(args.preprocess_path, 
-                                    f'{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
+                                    f'{args.dataset}_{args.cls_tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
     with open(processed_path, 'rb') as f:
         data_ = pickle.load(f)
         test_input_ids = data_['test']['input_ids']
         test_attention_mask = data_['test']['attention_mask']
         test_label = data_['test']['label']
-        if args.tokenizer in ['T5', 'Bart']:
+        if args.cls_tokenizer in ['T5', 'Bart']:
             test_token_type_ids = None
         else:
             test_token_type_ids = data_['test']['token_type_ids']
         del data_
 
     # 3) Dataloader setting
-    test_dataset = CustomDataset(tokenizer=args.tokenizer,
+    test_dataset = CustomDataset(tokenizer=args.cls_tokenizer,
                                  input_ids_list=test_input_ids,
                                  label_list=test_label,
                                  attention_mask_list=test_attention_mask,
                                  token_type_ids_list=test_token_type_ids,
                                  min_len=args.min_len, max_len=args.max_len)
-    test_dataloader = DataLoader(test_dataset, collate_fn=PadCollate(args.tokenizer),
+    test_dataloader = DataLoader(test_dataset, collate_fn=PadCollate(args.cls_tokenizer),
                                  drop_last=False, batch_size=args.batch_size, shuffle=False,
                                  pin_memory=True, num_workers=args.num_workers)
 

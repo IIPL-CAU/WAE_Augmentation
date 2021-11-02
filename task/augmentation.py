@@ -39,7 +39,7 @@ def augmentation(args):
 
     # 1) Data open
     processed_path = os.path.join(args.preprocess_path, 
-                                  f'{args.dataset}_{args.tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
+                                  f'{args.dataset}_{args.aug_tokenizer}_valid_ratio_{args.valid_split_ratio}_preprocessed.pkl')
     with open(processed_path, 'rb') as f:
         data_ = pickle.load(f)
         train_input_ids = data_['train']['input_ids']
@@ -48,7 +48,7 @@ def augmentation(args):
         valid_input_ids = data_['valid']['input_ids']
         valid_attention_mask = data_['valid']['attention_mask']
         valid_label = data_['valid']['label']
-        if args.tokenizer in ['T5', 'Bart']:
+        if args.aug_tokenizer in ['T5', 'Bart']:
             train_token_type_ids = None
             valid_token_type_ids = None
         else:
@@ -58,12 +58,12 @@ def augmentation(args):
 
     # 2) Dataloader setting
     dataset_dict = {
-        'train': CustomDataset(tokenizer=args.tokenizer, input_ids_list=train_input_ids,
+        'train': CustomDataset(tokenizer=args.aug_tokenizer, input_ids_list=train_input_ids,
                                label_list=train_label, attention_mask_list=train_attention_mask,
                                token_type_ids_list=train_token_type_ids, min_len=4, max_len=512)
     }
     dataloader_dict = {
-        'train': DataLoader(dataset_dict['train'], collate_fn=PadCollate(args.tokenizer), drop_last=True,
+        'train': DataLoader(dataset_dict['train'], collate_fn=PadCollate(args.aug_tokenizer), drop_last=True,
                             batch_size=args.batch_size, shuffle=True, pin_memory=True,
                             num_workers=args.num_workers)
     }

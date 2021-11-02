@@ -49,7 +49,7 @@ def augment_training(args):
         valid_input_ids = data_['valid']['input_ids']
         valid_attention_mask = data_['valid']['attention_mask']
         valid_label = data_['valid']['label']
-        if args.tokenizer in ['T5', 'Bart']:
+        if args.aug_tokenizer in ['T5', 'Bart']:
             train_token_type_ids = None
             valid_token_type_ids = None
         else:
@@ -59,18 +59,18 @@ def augment_training(args):
 
     # 2) Dataloader setting
     dataset_dict = {
-        'train': CustomDataset(tokenizer=args.tokenizer, input_ids_list=train_input_ids,
+        'train': CustomDataset(tokenizer=args.aug_tokenizer, input_ids_list=train_input_ids,
                                label_list=train_label, attention_mask_list=train_attention_mask,
                                token_type_ids_list=train_token_type_ids, min_len=4, max_len=512),
-        'valid': CustomDataset(tokenizer=args.tokenizer, input_ids_list=valid_input_ids,
+        'valid': CustomDataset(tokenizer=args.aug_tokenizer, input_ids_list=valid_input_ids,
                                label_list=valid_label, attention_mask_list=valid_attention_mask,
                                token_type_ids_list=valid_token_type_ids, min_len=4, max_len=512)
     }
     dataloader_dict = {
-        'train': DataLoader(dataset_dict['train'], collate_fn=PadCollate(args.tokenizer), drop_last=True,
+        'train': DataLoader(dataset_dict['train'], collate_fn=PadCollate(args.aug_tokenizer), drop_last=True,
                             batch_size=args.batch_size, shuffle=True, pin_memory=True,
                             num_workers=args.num_workers),
-        'valid': DataLoader(dataset_dict['valid'], collate_fn=PadCollate(args.tokenizer), drop_last=True,
+        'valid': DataLoader(dataset_dict['valid'], collate_fn=PadCollate(args.aug_tokenizer), drop_last=True,
                             batch_size=args.batch_size, shuffle=True, pin_memory=True,
                             num_workers=args.num_workers)
     }
