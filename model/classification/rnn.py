@@ -5,25 +5,21 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class ClassifierRNN(nn.Module):
-    def __init__(self, tokenizer_type, vocab_size, max_len, class_num, device, embed_size=300, hidden1_size=64, hidden2_size=32, linear_size=20):
+    def __init__(self, vocab_size, max_len, class_num, embed_size=300, hidden1_size=64, hidden2_size=32, linear_size=20):
         super(ClassifierRNN, self).__init__()
 
         """
         Initialize Text Classifier CNN model
         Args:
-            tokenizer_type (str): Type of tokenizer to use.
             vocab_size (int): Size of vocabulary.
             max_len (int): Maximum length of input sequence.
             class_num (int): Number of classes.
-            device (torch.device): Device to run the model on
             filter_num (int): Number of filters in the CNN
             filter_size (int): Size of the filters in the CNN
             linear_size (int): Size of the linear layer
         """
-        self.tokenizer_type = tokenizer_type
         self.vocab_size = vocab_size
         self.max_len = max_len
-        self.device = device
         self.embed_size = embed_size
         self.hidden1_size = hidden1_size
         self.hidden2_size = hidden2_size

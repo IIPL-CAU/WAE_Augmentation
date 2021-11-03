@@ -135,37 +135,64 @@ def preprocessing(args):
             tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
         elif args.aug_tokenizer == 'T5':
             tokenizer = T5Tokenizer.from_pretrained("t5-base")
+            tokenizer.add_tokens('[SEP]')
         elif args.aug_tokenizer == 'Bart':
             tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
+            tokenizer.add_tokens('[SEP]')
 
         # Tokenizing
         if len(train_dat.columns) > 3:
-            # Train data
-            encoded_dict['train'] = tokenizer(
-                train_dat['title'].tolist(),
-                train_dat['description'].tolist(),
-                max_length=args.max_len,
-                padding='max_length',
-                truncation=True
-            )
+            if args.aug_tokenizer == 'BERT':
+                # Train data
+                encoded_dict['train'] = tokenizer(
+                    train_dat['title'].tolist(),
+                    train_dat['description'].tolist(),
+                    max_length=args.max_len,
+                    padding='max_length',
+                    truncation=True
+                )
 
-            # Validation data
-            encoded_dict['valid'] = tokenizer(
-                valid_dat['title'].tolist(),
-                valid_dat['description'].tolist(),
-                max_length=args.max_len,
-                padding='max_length',
-                truncation=True
-            )
+                # Validation data
+                encoded_dict['valid'] = tokenizer(
+                    valid_dat['title'].tolist(),
+                    valid_dat['description'].tolist(),
+                    max_length=args.max_len,
+                    padding='max_length',
+                    truncation=True
+                )
+                # Test data
+                encoded_dict['test'] = tokenizer(
+                    test_dat['title'].tolist(),
+                    test_dat['description'].tolist(),
+                    max_length=args.max_len,
+                    padding='max_length',
+                    truncation=True
+                )
+            else:
+                # Train data
+                encoded_dict['train'] = tokenizer(
+                    train_dat['total_text'].tolist(),
+                    max_length=args.max_len,
+                    padding='max_length',
+                    truncation=True
+                )
 
-            # Test data
-            encoded_dict['test'] = tokenizer(
-                test_dat['title'].tolist(),
-                test_dat['description'].tolist(),
-                max_length=args.max_len,
-                padding='max_length',
-                truncation=True
-            )
+                # Validation data
+                encoded_dict['valid'] = tokenizer(
+                    valid_dat['total_text'].tolist(),
+                    max_length=args.max_len,
+                    padding='max_length',
+                    truncation=True
+                )
+
+                # Test data
+                encoded_dict['test'] = tokenizer(
+                    test_dat['total_text'].tolist(),
+                    max_length=args.max_len,
+                    padding='max_length',
+                    truncation=True
+                )
+
         else:
             # Train data
             encoded_dict['train'] = tokenizer(

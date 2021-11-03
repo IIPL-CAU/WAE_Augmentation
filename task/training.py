@@ -102,6 +102,10 @@ def training(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
+    # if args.cls_model_type in ['RNN', 'CNN']:
+    #     model_config = {
+    #         'vocab_size': 
+    #     }
     model = Classifier(model_type=args.cls_model_type, isPreTrain=args.cls_PLM_use,
                        num_class=len(set(train_label)))
     model = model.train()
@@ -153,7 +157,6 @@ def training(args):
 
             # Input, output setting
             if len(input_) == 3:
-                print('how')
                 input_ids = input_[0].to(device, non_blocking=True)
                 attention_mask = input_[1].to(device, non_blocking=True)
                 labels = input_[2].to(device, non_blocking=True)

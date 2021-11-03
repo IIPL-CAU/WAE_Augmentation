@@ -6,12 +6,13 @@ from model.classification.rnn import ClassifierRNN
 from model.classification.bert import ClassifierBERT
 
 class Classifier(nn.Module):
-    def __init__(self, model_type, isPreTrain, num_class):
+    def __init__(self, model_type, isPreTrain, num_class, config=None):
         super().__init__()
 
         self.model_type = model_type
 
         # if model_type == 'CNN':
+        #     vocab_size = config['vocab_size']
         #     self.model = ClassifierCNN()
 
         # if model_type == 'RNN':
