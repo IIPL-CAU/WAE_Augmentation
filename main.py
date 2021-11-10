@@ -78,26 +78,35 @@ if __name__=='__main__':
     parser.add_argument('--max_len', default=300, type=int,
                         help='Maximum length of sequence; Default is 300')
     # WAE setting
+    parser.add_argument('--ae_type', default='WAE', type=str, choices=['WAE', 'VAE'],
+                        help='Auto-encoder type; Default is WAE')
     parser.add_argument('--aug_tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
                         help='Tokenizer settings; Default is T5')
     parser.add_argument('--aug_model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
                         help='Model settings; Default is T5')
-    parser.add_argument('--aug_PLM_use', default=True, type=str2bool,
+    parser.add_argument('--aug_PLM_use', default=False, type=str2bool,
                         help='Model settings; Default is T5')
+    parser.add_argument('--WAE_decoder', default='Transformer', type=str, choices=['Transformer', 'LSTM', 'GRU'],
+                        help='Decoder Type; Default is Transformer')
     parser.add_argument('--WAE_loss', default='mmd', choices=['mmd', 'gan'],
                         help='Wasserstein Auto-encoder Loss Type; Default is mmd')
     parser.add_argument('--d_latent', default=256, type=int,
                         help='Latent space dimension; Default is 256')
     parser.add_argument('--z_var', default=2, type=int,
                         help='Default is 2')
-    parser.add_argument('--loss_lambda', default=100, type=int,
-                        help='MMD loss lambda; Default is 100')
+    parser.add_argument('--loss_lambda', default=1000, type=int,
+                        help='MMD loss lambda; Default is 1000')
+    # VAE setting
+    parser.add_argument('--vae_beta', default=10, type=int,
+                        help='Default is 10')
     # Training setting
     parser.add_argument('--train_with_augmentation', default=True, type=str2bool,
                         help='Text classifier training with augmentation data; Default is True')
-    parser.add_argument('--cls_tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
+    parser.add_argument('--train_only_augmentation', default=False, type=str2bool,
+                        help='Text classifier training only with augmentation data; Default is False')
+    parser.add_argument('--cls_tokenizer', default='BERT', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
                         help='Tokenizer settings; Default is T5')
-    parser.add_argument('--cls_model_type', default='CNN', type=str, choices=['CNN', 'RNN', 'BERT'],
+    parser.add_argument('--cls_model_type', default='BERT', type=str, choices=['CNN', 'RNN', 'BERT'],
                         help='Classifier model settings; Default is CNN')
     parser.add_argument('--cls_PLM_use', default=True, type=str2bool,
                         help='Model settings; Default is T5')

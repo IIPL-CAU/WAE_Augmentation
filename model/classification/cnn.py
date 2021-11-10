@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ClassifierCNN(nn.Module):
-    def __init__(self, tokenizer_type, vocab_size, max_len, class_num, device, embed_size=300, filter_num=128, filter_size=5, linear_size=20):
+    def __init__(self, tokenizer_type, num_class, embed_size=300, filter_num=128, filter_size=5, linear_size=20):
         super(ClassifierCNN, self).__init__()
 
         """
@@ -19,10 +19,12 @@ class ClassifierCNN(nn.Module):
             filter_size (int): Size of the filters in the CNN
             linear_size (int): Size of the linear layer
         """
-        self.tokenizer_type = tokenizer_type
-        self.vocab_size = vocab_size
-        self.max_len = max_len
-        self.device = device
+        if tokenizer_type == 'T5':
+            vocab_size = 32128
+        elif tokenizer_type == 'Bart':
+            vocab_size = 50265
+        elif tokenizer_type == 'BERT':
+            vocab_size = 30522
         self.embed_size = embed_size
         self.filter_num = filter_num
         self.filter_size = filter_size
@@ -39,7 +41,7 @@ class ClassifierCNN(nn.Module):
             nn.Linear(self.linear_input_size, linear_size),
             nn.ReLU()
         )
-        self.linear2 = nn.Linear(linear_size, class_num)
+        self.linear2 = nn.Linear(linear_size, num_class)
         nn.init.normal_(self.linear2.weight)
         nn.init.normal_(self.linear2.bias)
 

@@ -57,7 +57,10 @@ def training(args):
 
     # 2) Augmented Data Open
     if args.train_with_augmentation:
-        data_name = f'{args.dataset}_{args.aug_model_type}_aug_preprocessed.pkl'
+        if args.ae_type == 'WAE':
+            data_name = f'{args.dataset}_{args.aug_model_type}_aug_preprocessed.pkl'
+        if args.ae_type == 'VAE':
+            data_name = f'{args.dataset}_{args.aug_model_type}_aug_{args.ae_type.lower()}_preprocessed.pkl'
         with open(os.path.join(args.preprocess_path, data_name), 'rb') as f:
             data_ = pickle.load(f)
             train_input_ids = train_input_ids + data_['augmented']['input_ids']
@@ -67,6 +70,22 @@ def training(args):
                 train_token_type_ids = None
             else:
                 train_token_type_ids = train_token_type_ids + data_['augmented']['token_type_ids']
+            del data_
+
+    if args.train_only_augmentation:
+        if args.ae_type == 'WAE':
+            data_name = f'{args.dataset}_{args.aug_model_type}_aug_preprocessed.pkl'
+        if args.ae_type == 'VAE':
+            data_name = f'{args.dataset}_{args.aug_model_type}_aug_{args.ae_type.lower()}_preprocessed.pkl'
+        with open(os.path.join(args.preprocess_path, data_name), 'rb') as f:
+            data_ = pickle.load(f)
+            train_input_ids = data_['augmented']['input_ids']
+            train_attention_mask = data_['augmented']['attention_mask']
+            train_label = data_['augmented']['label']
+            if args.cls_tokenizer in ['T5', 'Bart']:
+                train_token_type_ids = None
+            else:
+                train_token_type_ids = data_['augmented']['token_type_ids']
             del data_
 
     # 3) Dataloader setting
@@ -107,7 +126,7 @@ def training(args):
     #         'vocab_size': 
     #     }
     model = Classifier(model_type=args.cls_model_type, isPreTrain=args.cls_PLM_use,
-                       num_class=len(set(train_label)))
+                       num_class=len(set(train_label)), tokenizer_type=args.cls_tokenizer)
     model = model.train()
     model = model.to(device)
 
@@ -250,6 +269,8 @@ def training(args):
                 os.mkdir(args.save_path)
             # Save
             save_name = f'{args.dataset}_{args.cls_model_type}_aug_{args.train_with_augmentation}_cls_checkpoint.pth.tar'
+            if args.train_only_augmentation:
+                save_name = f'{args.dataset}_{args.cls_model_type}_only_aug_cls_checkpoint.pth.tar'
             torch.save({
                 'epoch': epoch,
                 'model': model.state_dict(),

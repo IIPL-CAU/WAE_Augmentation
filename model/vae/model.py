@@ -9,13 +9,15 @@ from transformers import T5ForConditionalGeneration, T5EncoderModel, T5Config, T
 from transformers import BartTokenizerFast, BartForConditionalGeneration, BartConfig
 # BERT
 from transformers import BertTokenizerFast, BertModel, BertForMaskedLM, BertConfig
+# Import Custom Modules
+from model.vae.loss import GaussianKLLoss
 
-class TransformerWAE(nn.Module):
-    def __init__(self, model_type, decoder_type, isPreTrain, d_latent, device):
+class TransformerVAE(nn.Module):
+    def __init__(self, model_type, isPreTrain, d_latent, device):
         super().__init__()
 
         """
-        Initialize WAE model
+        Initialize VAE model
         
         Args:
             encoder_config (dictionary): encoder transformer's configuration
@@ -31,7 +33,6 @@ class TransformerWAE(nn.Module):
         self.model_type = model_type
         self.isPreTrain = isPreTrain
         self.device = device
-        self.decoder_type = decoder_type
 
         if self.model_type == 'T5':
             self.tokenizer = T5TokenizerFast.from_pretrained("t5-small")
@@ -121,21 +122,12 @@ class TransformerWAE(nn.Module):
         else:
             raise ValueError('not supported')
 
-        if self.decoder_type == 'LSTM':
-            self.decoder_model = nn.LSTM(input_size=self.d_hidden, hidden_size=self.d_hidden, 
-                                         num_layers=6, batch_first=True, bidirectional=True)
-            self.decoder_linear1 = nn.Linear(self.d_hidden*2, 20)
-            self.decoder_linear2 = nn.Linear(20, 32128)
-
-        if self.decoder_type == 'GRU':
-            self.decoder_model = nn.GRU(input_size=self.d_hidden, hidden_size=self.d_hidden, 
-                                         num_layers=6, batch_first=True, bidirectional=True)
-            self.decoder_linear1 = nn.Linear(self.d_hidden*2, 20)
-            self.decoder_linear2 = nn.Linear(20, 32128)
-
         # For latent mapping
-        # self.hidden2latent = nn.Linear(self.d_hidden, self.d_latent)
-        # self.latent2hidden = nn.Linear(self.d_latent, self.d_hidden)
+        self.noise_net = nn.Sequential(nn.Linear(self.d_hidden,
+                                                 self.d_hidden),
+                                       nn.ReLU(),
+                                       nn.Linear(self.d_hidden,
+                                                 self.d_hidden * 2))
 
     def forward(self, input_ids, attention_mask, token_type_ids=None):
 
@@ -155,24 +147,41 @@ class TransformerWAE(nn.Module):
             wae_enc_out = self.encoder1_final_layer_norm(wae_enc_out)
             wae_enc_out = self.encoder1_dropout(wae_enc_out)
 
+            # VAE
+            mask = attention_mask.view(-1)
+            indices = (mask == 1)
+            mu_logvar = self.noise_net(wae_enc_out)
+            mu, log_var = torch.chunk(mu_logvar, 2, dim=-1)
+            zs = mu + torch.randn_like(mu) * torch.exp(0.5 * log_var)
+            noise = zs
+
+            prior_mu = torch.ones_like(mu)
+            # If p < 0.5, sqrt makes variance the larger
+            prior_var = torch.ones_like(mu) * math.sqrt(0.1 / (1-0.1))
+            prior_logvar = torch.log(prior_var)
+
+            kl_criterion = GaussianKLLoss()
+            h = wae_enc_out.size(-1)
+            _mu = mu.view(-1, h)[indices]
+            _log_var = log_var.view(-1, h)[indices]
+            _prior_mu = prior_mu.view(-1, h)[indices]
+            _prior_logvar = prior_logvar.view(-1, h)[indices]
+
+            kl = kl_criterion(_mu, _log_var, _prior_mu, _prior_logvar)
+
             # Encoder2 Forward
-            wae_dec_out = self.encoder2_model(inputs_embeds=wae_enc_out, 
+            wae_dec_out = self.encoder2_model(inputs_embeds=wae_enc_out * noise, 
                                               attention_mask=attention_mask)
             wae_dec_out = wae_dec_out['last_hidden_state']
 
             # Decoder
-            if self.decoder_type == 'Transformer':
-                model_out = self.decoder_model(inputs_embeds=wae_enc_out, 
-                                            attention_mask=attention_mask,
-                                            encoder_hidden_states=wae_dec_out,
-                                            encoder_attention_mask=attention_mask)
-                model_out = self.lm_head(model_out['last_hidden_state'])
-            else:
-                model_out, _ = self.decoder_model(wae_enc_out)
-                model_out = self.decoder_linear1(model_out)
-                model_out = self.decoder_linear2(model_out)
+            model_out = self.decoder_model(inputs_embeds=wae_enc_out, 
+                                           attention_mask=attention_mask,
+                                           encoder_hidden_states=wae_dec_out,
+                                           encoder_attention_mask=attention_mask)
+            model_out = self.lm_head(model_out['last_hidden_state'])
 
-            return wae_enc_out, wae_dec_out, model_out
+            return wae_enc_out, wae_dec_out, model_out, kl
 
     #===================================#
     #===============Bart================#

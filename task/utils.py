@@ -18,9 +18,9 @@ def read_data(data_name: str, data_path: str):
 
     if data_name == 'AG_News':
         train_dat = pd.read_csv(os.path.join(data_path , 'AG_News/train.csv'), sep=',',
-                                names=['label', 'title', 'description'])
+                                names=['label', 'title', 'description']).loc[1:]
         test_dat = pd.read_csv(os.path.join(data_path , 'AG_News/test.csv'), sep=',',
-                                names=['label', 'title', 'description'])
+                                names=['label', 'title', 'description']).loc[1:]
 
         label_dict = dict()
         for i, label_ in enumerate(sorted(train_dat['label'].unique())):

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class ClassifierRNN(nn.Module):
-    def __init__(self, vocab_size, max_len, class_num, embed_size=300, hidden1_size=64, hidden2_size=32, linear_size=20):
+    def __init__(self, tokenizer_type, num_class, embed_size=300, hidden1_size=64, hidden2_size=32, linear_size=20):
         super(ClassifierRNN, self).__init__()
 
         """
@@ -18,8 +18,12 @@ class ClassifierRNN(nn.Module):
             filter_size (int): Size of the filters in the CNN
             linear_size (int): Size of the linear layer
         """
-        self.vocab_size = vocab_size
-        self.max_len = max_len
+        if tokenizer_type == 'T5':
+            vocab_size = 32128
+        elif tokenizer_type == 'Bart':
+            vocab_size = 50265
+        elif tokenizer_type == 'BERT':
+            vocab_size = 30522
         self.embed_size = embed_size
         self.hidden1_size = hidden1_size
         self.hidden2_size = hidden2_size
@@ -35,7 +39,7 @@ class ClassifierRNN(nn.Module):
             nn.Linear(self.linear_input_size, linear_size),
             nn.ReLU()
         )
-        self.linear2 = nn.Linear(linear_size, class_num)
+        self.linear2 = nn.Linear(linear_size, num_class)
         nn.init.normal_(self.linear2.weight)
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None):
@@ -49,7 +53,7 @@ class ClassifierRNN(nn.Module):
         # Embedding
         embed = self.embedding(input_ids) # (batch_size, max_len, embed_size)
         # Pack padded sequence
-        non_pad_len = input_ids.ne(self.tokenizer.pad_token_id).sum(dim=1).cpu()
+        non_pad_len = input_ids.ne(0).sum(dim=1).cpu()
         # LSTM 1
         packed_embed = pack_padded_sequence(embed, non_pad_len, batch_first=True, enforce_sorted=False)
         lstm1_out, _ = self.lstm1(packed_embed) # (batch_size, max_len, 2 * hidden1_size)

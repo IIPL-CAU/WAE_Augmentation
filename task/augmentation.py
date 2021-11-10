@@ -16,6 +16,7 @@ from transformers import BertTokenizerFast
 # Import Custom Modules
 from model.wae.dataset import CustomDataset, PadCollate
 from model.wae.model import TransformerWAE, Discirminator_model
+from model.vae.model import TransformerVAE
 from model.wae.loss import mmd, sample_z, log_density_igaussian
 from utils import TqdmLoggingHandler, write_log
 
@@ -64,7 +65,7 @@ def augmentation(args):
     }
     dataloader_dict = {
         'train': DataLoader(dataset_dict['train'], collate_fn=PadCollate(args.aug_tokenizer), drop_last=True,
-                            batch_size=args.batch_size, shuffle=True, pin_memory=True,
+                            batch_size=args.batch_size, shuffle=False, pin_memory=True,
                             num_workers=args.num_workers)
     }
 
@@ -77,8 +78,12 @@ def augmentation(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
-    model = TransformerWAE(model_type=args.aug_model_type, isPreTrain=args.aug_PLM_use,
-                           d_latent=args.d_latent, device=device)
+    if args.ae_type == 'WAE':
+        model = TransformerWAE(model_type=args.aug_model_type, decoder_type=args.WAE_decoder,
+                               isPreTrain=args.aug_PLM_use, d_latent=args.d_latent, device=device)
+    if args.ae_type == 'VAE':
+        model = TransformerVAE(model_type=args.aug_model_type, isPreTrain=args.aug_PLM_use,
+                            d_latent=args.d_latent, device=device)
     
     # 1-1) Discriminator for WAE-GAN Mode
     if args.WAE_loss == 'gan':
@@ -86,7 +91,9 @@ def augmentation(args):
                                       device=device, class_token='first_token')
 
     # 2) Model load
-    save_name = f'{args.dataset}_{args.aug_model_type}_wae_PLM_{args.aug_PLM_use}_checkpoint.pth.tar'
+    save_name = f'{args.dataset}_{args.aug_model_type}_{args.ae_type.lower()}_PLM_{args.aug_PLM_use}_checkpoint.pth.tar'
+    if args.WAE_decoder is not 'Transformer':
+        save_name = f'{args.dataset}_{args.aug_model_type}_{args.ae_type.lower()}_PLM_{args.aug_PLM_use}_{args.WAE_decoder}_checkpoint.pth.tar'
     checkpoint = torch.load(os.path.join(args.save_path, save_name), map_location='cpu')
     model.load_state_dict(checkpoint['model'])
     model = model.eval()
@@ -128,7 +135,10 @@ def augmentation(args):
                 label_list = input_[3].tolist()
 
             # Model
-            wae_enc_out, wae_dec_out, model_out = model(input_ids, attention_mask)
+            if args.ae_type == 'WAE':
+                wae_enc_out, wae_dec_out, model_out = model(input_ids, attention_mask)
+            if args.ae_type == 'VAE':
+                wae_enc_out, wae_dec_out, model_out, kl = model(input_ids, attention_mask)
 
             # Decode
             generated_sent = model.tokenizer.batch_decode(model_out.max(dim=2)[1], skip_special_tokens=True)
@@ -142,7 +152,10 @@ def augmentation(args):
     #===================================#
 
     # CSV Save
-    data_name = f'{args.dataset}_{args.aug_model_type}_{args.WAE_loss}.csv'
+    if args.ae_type == 'WAE':
+        data_name = f'{args.dataset}_{args.aug_model_type}_{args.WAE_loss}.csv'
+    if args.ae_type == 'VAE':
+        data_name = f'{args.dataset}_{args.aug_model_type}_{args.ae_type.lower()}.csv'
     aug_dat = pd.DataFrame({
         'description': total_sentence_list,
         'label': total_label_list
@@ -159,7 +172,10 @@ def augmentation(args):
     )
     encoded_out['label'] = total_label_list
 
-    data_name = f'{args.dataset}_{args.aug_model_type}_aug_preprocessed.pkl'
+    if args.ae_type == 'WAE':
+        data_name = f'{args.dataset}_{args.aug_model_type}_aug_preprocessed.pkl'
+    if args.ae_type == 'VAE':
+        data_name = f'{args.dataset}_{args.aug_model_type}_aug_{args.ae_type.lower()}_preprocessed.pkl'
     with open(os.path.join(args.preprocess_path, data_name), 'wb') as f:
         pickle.dump({
             'augmented': {

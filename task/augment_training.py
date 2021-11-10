@@ -14,9 +14,12 @@ from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 # Import Custom Modules
+# WAE
 from model.wae.dataset import CustomDataset, PadCollate
 from model.wae.model import TransformerWAE, Discirminator_model
 from model.wae.loss import mmd, sample_z, log_density_igaussian
+# VAE
+from model.vae.model import TransformerVAE
 from optimizer.utils import shceduler_select, optimizer_select
 from utils import TqdmLoggingHandler, write_log
 
@@ -84,8 +87,12 @@ def augment_training(args):
 
     # 1) Model initiating
     write_log(logger, "Instantiating models...")
-    model = TransformerWAE(model_type=args.aug_model_type, isPreTrain=args.aug_PLM_use,
-                           d_latent=args.d_latent, device=device)
+    if args.ae_type == 'WAE':
+        model = TransformerWAE(model_type=args.aug_model_type, decoder_type=args.WAE_decoder,
+                               isPreTrain=args.aug_PLM_use, d_latent=args.d_latent, device=device)
+    if args.ae_type == 'VAE':
+        model = TransformerVAE(model_type=args.aug_model_type, isPreTrain=args.aug_PLM_use,
+                            d_latent=args.d_latent, device=device)
     model = model.train()
     model = model.to(device)
     
@@ -107,6 +114,8 @@ def augment_training(args):
     start_epoch = 0
     if args.resume:
         save_name = f'{args.dataset}_{args.model_type}_wae_checkpoint.pth.tar'
+        if args.WAE_decoder is not 'Transformer':
+            save_name = f'{args.dataset}_{args.aug_model_type}_{args.ae_type.lower()}_PLM_{args.aug_PLM_use}_{args.WAE_decoder}_checkpoint.pth.tar'
         checkpoint = torch.load(os.path.join(args.save_path, save_name), map_location='cpu')
         start_epoch = checkpoint['epoch'] + 1
         model.load_state_dict(checkpoint['model'])
@@ -152,44 +161,54 @@ def augment_training(args):
                 attention_mask = input_[2].to(device, non_blocking=True)
 
             # Model
-            wae_enc_out, _, model_out = model(input_ids, attention_mask, token_type_ids)
-            z = sample_z(args=args, template=wae_enc_out)
+            if args.ae_type == 'WAE':
+                wae_enc_out, _, model_out = model(input_ids, attention_mask, token_type_ids)
+                z = sample_z(args=args, template=wae_enc_out)
+            if args.ae_type == 'VAE':
+                wae_enc_out, _, model_out, kl = model(input_ids, attention_mask)
 
             # Loss calculate
             recon_loss = F.cross_entropy(model_out.view(-1, model_out.size(-1)), 
                                          input_ids.contiguous().view(-1), 
                                          ignore_index=model.tokenizer.pad_token_id)
-            if args.WAE_loss == 'mmd':
+            if args.ae_type == 'WAE':
                 mmd_loss = mmd(wae_enc_out.view(args.batch_size, -1), 
-                               z.view(args.batch_size, -1), 
-                               z_var=args.z_var)
-                total_loss = recon_loss + args.loss_lambda*mmd_loss
-            elif args.WAE_loss == 'gan':
-                # Discriminator Model Forward
-                D_z = D_model(z)
-                D_z_tilde = D_model(wae_enc_out)
+                            z.view(args.batch_size, -1), 
+                            z_var=args.z_var)
+                total_loss = recon_loss + args.loss_lambda*mmd_loss  
+                if args.WAE_loss == 'mmd':
+                    mmd_loss = mmd(wae_enc_out.view(args.batch_size, -1), 
+                                z.view(args.batch_size, -1), 
+                                z_var=args.z_var)
+                    total_loss = recon_loss + args.loss_lambda*mmd_loss
+                elif args.WAE_loss == 'gan':
+                    # Discriminator Model Forward
+                    D_z = D_model(z)
+                    D_z_tilde = D_model(wae_enc_out)
 
-                # Pre-setting
-                log_p_z = log_density_igaussian(z.view(args.batch_size, -1), args.z_var).view(-1, 1)
-                ones = torch.ones(args.batch_size, 1).to(device)
-                zeros = torch.zeros(args.batch_size, 1).to(device)
+                    # Pre-setting
+                    log_p_z = log_density_igaussian(z.view(args.batch_size, -1), args.z_var).view(-1, 1)
+                    ones = torch.ones(args.batch_size, 1).to(device)
+                    zeros = torch.zeros(args.batch_size, 1).to(device)
 
-                # Loss Calculate
-                D_loss = F.binary_cross_entropy_with_logits(D_z+log_p_z, ones) + \
-                         F.binary_cross_entropy_with_logits(D_z_tilde+log_p_z, zeros)
-                total_D_loss = args.loss_lambda*D_loss
+                    # Loss Calculate
+                    D_loss = F.binary_cross_entropy_with_logits(D_z+log_p_z, ones) + \
+                            F.binary_cross_entropy_with_logits(D_z_tilde+log_p_z, zeros)
+                    total_D_loss = args.loss_lambda*D_loss
 
-                # Loss Back-propagation
-                optimizer_d.zero_grad()
-                scaler_d.scale(total_D_loss).backward(retain_graph=True)
-                scaler_d.unscale_(optimizer_d)
-                clip_grad_norm_(model.parameters(), args.clip_grad_norm)
-                scaler_d.step(optimizer_d)
-                scaler_d.update()
+                    # Loss Back-propagation
+                    optimizer_d.zero_grad()
+                    scaler_d.scale(total_D_loss).backward(retain_graph=True)
+                    scaler_d.unscale_(optimizer_d)
+                    clip_grad_norm_(model.parameters(), args.clip_grad_norm)
+                    scaler_d.step(optimizer_d)
+                    scaler_d.update()
 
-                # Total Loss
-                Q_loss = F.binary_cross_entropy_with_logits(D_z_tilde+log_p_z, ones)
-                total_loss = recon_loss + args.loss_lambda*Q_loss
+                    # Total Loss
+                    Q_loss = F.binary_cross_entropy_with_logits(D_z_tilde+log_p_z, ones)
+                    total_loss = recon_loss + args.loss_lambda*Q_loss
+            if args.ae_type == 'VAE':
+                total_loss = recon_loss + kl * args.vae_beta  
 
             # Back-propagation
             scaler.scale(total_loss).backward()
@@ -207,15 +226,21 @@ def augment_training(args):
             acc = sum(input_ids.view(-1) == model_out.view(-1, model_out.size(-1)).max(dim=1)[1]) / len(input_ids.view(-1))
             acc = acc.item() * 100
             if i == 0 or freq-1 == args.print_freq or i==len(dataloader_dict['train'])-1:
-                if args.WAE_loss == 'mmd':
-                    batch_log = "[Epoch:%d][%d/%d] train_recon_loss:%2.3f | train_mmd_loss:%2.3f | train_acc:%02.2f | learning_rate:%3.6f | spend_time:%3.2fmin" \
+                if args.ae_type == 'WAE':
+                    if args.WAE_loss == 'mmd':
+                        batch_log = "[Epoch:%d][%d/%d] train_recon_loss:%2.3f | train_mmd_loss:%2.3f | train_acc:%02.2f | learning_rate:%3.6f | spend_time:%3.2fmin" \
+                                % (epoch+1, i+1, len(dataloader_dict['train']), 
+                                recon_loss.item(), mmd_loss.item(), acc, optimizer.param_groups[0]['lr'], 
+                                (time.time() - start_time_e) / 60)
+                    elif args.WAE_loss == 'gan':
+                        batch_log = "[Epoch:%d][%d/%d] train_recon_loss:%2.3f | train_gan_loss:%2.3f | train_acc:%02.2f | learning_rate:%3.6f | spend_time:%3.2fmin" \
+                                % (epoch+1, i+1, len(dataloader_dict['train']), 
+                                recon_loss.item(), total_D_loss.item(), acc, optimizer.param_groups[0]['lr'], 
+                                (time.time() - start_time_e) / 60)
+                if args.ae_type == 'VAE':
+                    batch_log = "[Epoch:%d][%d/%d] train_recon_loss:%2.3f | train_kl_loss:%2.3f | train_acc:%02.2f | learning_rate:%3.6f | spend_time:%3.2fmin" \
                             % (epoch+1, i+1, len(dataloader_dict['train']), 
-                            recon_loss.item(), mmd_loss.item(), acc, optimizer.param_groups[0]['lr'], 
-                            (time.time() - start_time_e) / 60)
-                elif args.WAE_loss == 'gan':
-                    batch_log = "[Epoch:%d][%d/%d] train_recon_loss:%2.3f | train_gan_loss:%2.3f | train_acc:%02.2f | learning_rate:%3.6f | spend_time:%3.2fmin" \
-                            % (epoch+1, i+1, len(dataloader_dict['train']), 
-                            recon_loss.item(), total_D_loss.item(), acc, optimizer.param_groups[0]['lr'], 
+                            recon_loss.item(), kl.item(), acc, optimizer.param_groups[0]['lr'], 
                             (time.time() - start_time_e) / 60)
                 write_log(logger, batch_log)
                 freq = -1
@@ -234,7 +259,7 @@ def augment_training(args):
 
         # Save setting
         original_list, generated_list = list(), list()
-        path_ = f'{args.dataset}_{args.aug_model_type}_wae_PLM_{args.aug_PLM_use}'
+        path_ = f'{args.dataset}_{args.aug_model_type}_{args.ae_type.lower()}_PLM_{args.aug_PLM_use}'
         if not os.path.exists(os.path.join(args.augmentation_path, path_)):
             os.mkdir(os.path.join(args.augmentation_path, path_))
 
@@ -253,16 +278,22 @@ def augment_training(args):
                     attention_mask = input_[2].to(device, non_blocking=True)
 
                 # Model
-                wae_enc_out, _, model_out = model(input_ids, attention_mask)
+                if args.ae_type == 'WAE':
+                    wae_enc_out, _, model_out = model(input_ids, attention_mask, token_type_ids)
+                if args.ae_type == 'VAE':
+                    wae_enc_out, _, model_out, kl = model(input_ids, attention_mask)
 
                 # Loss calculate
                 recon_loss = F.cross_entropy(model_out.view(-1, model_out.size(-1)), 
                                             input_ids.contiguous().view(-1), 
                                             ignore_index=model.tokenizer.pad_token_id)
-                mmd_loss = mmd(wae_enc_out.view(args.batch_size, -1), 
-                               z.view(args.batch_size, -1), 
-                               z_var=args.z_var)
-                total_loss = recon_loss + args.loss_lambda*mmd_loss
+                if args.ae_type == 'WAE':
+                    mmd_loss = mmd(wae_enc_out.view(args.batch_size, -1), 
+                                z.view(args.batch_size, -1), 
+                                z_var=args.z_var)
+                    total_loss = recon_loss + args.loss_lambda*mmd_loss
+                if args.ae_type == 'VAE':
+                    total_loss = recon_loss + kl * args.vae_beta
 
                 # Print loss value only training
                 acc = sum(input_ids.view(-1) == model_out.view(-1, model_out.size(-1)).max(dim=1)[1]) / len(input_ids.view(-1))
@@ -315,7 +346,9 @@ def augment_training(args):
             if not os.path.exists(args.save_path):
                 os.mkdir(args.save_path)
             # Save
-            save_name = f'{args.dataset}_{args.aug_model_type}_wae_PLM_{args.aug_PLM_use}_checkpoint.pth.tar'
+            save_name = f'{args.dataset}_{args.aug_model_type}_{args.ae_type.lower()}_PLM_{args.aug_PLM_use}_checkpoint.pth.tar'
+            if args.WAE_decoder is not 'Transformer':
+                save_name = f'{args.dataset}_{args.aug_model_type}_{args.ae_type.lower()}_PLM_{args.aug_PLM_use}_{args.WAE_decoder}_checkpoint.pth.tar'
             torch.save({
                 'epoch': epoch,
                 'model': model.state_dict(),
