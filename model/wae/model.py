@@ -98,16 +98,21 @@ class TransformerWAE(nn.Module):
                 self.d_hidden = self.encoder_model.embeddings.word_embeddings.embedding_dim
                 # Decoder Setting
                 self.decoder_model = BertForMaskedLM(config=model_config)
-        elif self.model_type == 'BERT+GPT2':
+        elif self.model_type == 'BERT+T5':
             # To Do
             self.tokenizer = BertTokenizerFast.from_pretrained('bert-base-cased')
             if self.isPreTrain:
                 # Encoder Setting
                 self.encoder_model = BertModel.from_pretrained('bert-base-cased')
-                # Dimension Setting
-                self.d_hidden = self.encoder_model.embeddings.word_embeddings.embedding_dim
+                # Encoder2 Setting
+                self.middle_linear = nn.Linear(768, 512)
+                self.model2 = T5ForConditionalGeneration.from_pretrained('t5-small')
+                self.encoder2_model = self.model2.get_encoder()
                 # Decoder Setting
-                self.decoder_model = BertForMaskedLM.from_pretrained('bert-base-cased')
+                self.decoder_model = self.model2.get_decoder()
+                # Final Layer Setting
+                self.vocab_size = self.model2.lm_head.out_features
+                self.lm_head = nn.Linear(512, 28996)
             else:
                 # Config Setting
                 model_config = BertConfig('bert-base-cased')
@@ -222,18 +227,25 @@ class TransformerWAE(nn.Module):
     #=============BERT+GPT2=============#
     #===================================#
 
-        elif self.model_type == 'BERT+GPT2':
+        elif self.model_type == 'BERT+T5':
             # Encoder Forward
             wae_enc_out = self.encoder_model(input_ids=input_ids,
                                              attention_mask=attention_mask,
                                              token_type_ids=token_type_ids)
             wae_enc_out = wae_enc_out['last_hidden_state']
+            wae_enc_out = self.middle_linear(wae_enc_out)
 
-            # Decoder Forward
-            wae_dec_out = self.decoder_model(inputs_embeds=wae_enc_out, 
-                                              attention_mask=attention_mask,
-                                              token_type_ids=token_type_ids)
-            model_out = wae_dec_out['logits']
+            # Encoder2 Forward
+            wae_dec_out = self.encoder2_model(inputs_embeds=wae_enc_out, 
+                                              attention_mask=attention_mask)
+            wae_dec_out = wae_dec_out['last_hidden_state']
+
+            # Decoder
+            model_out = self.decoder_model(inputs_embeds=wae_enc_out, 
+                                        attention_mask=attention_mask,
+                                        encoder_hidden_states=wae_dec_out,
+                                        encoder_attention_mask=attention_mask)
+            model_out = self.lm_head(model_out['last_hidden_state'])
 
             return wae_enc_out, wae_dec_out, model_out
 

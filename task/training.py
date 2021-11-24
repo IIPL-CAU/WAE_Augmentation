@@ -268,9 +268,9 @@ def training(args):
             if not os.path.exists(args.save_path):
                 os.mkdir(args.save_path)
             # Save
-            save_name = f'{args.dataset}_{args.cls_model_type}_aug_{args.train_with_augmentation}_cls_checkpoint.pth.tar'
+            save_name = f'{args.dataset}_{args.cls_model_type}_aug_{args.train_with_augmentation}_PLM_{args.cls_PLM_use}_cls_checkpoint.pth.tar'
             if args.train_only_augmentation:
-                save_name = f'{args.dataset}_{args.cls_model_type}_only_aug_cls_checkpoint.pth.tar'
+                save_name = f'{args.dataset}_{args.cls_model_type}_only_aug_PLM_{args.cls_PLM_use}_cls_checkpoint.pth.tar'
             torch.save({
                 'epoch': epoch,
                 'model': model.state_dict(),

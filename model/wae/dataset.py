@@ -23,7 +23,7 @@ class CustomDataset(Dataset):
         self.num_data = len(self.data)
         
     def __getitem__(self, index):
-        if self.tokenizer == 'T5':
+        if self.tokenizer in ['T5', 'Bart']:
             id_, attention_, label_ = self.data[index]
             return id_, attention_, label_
         else:

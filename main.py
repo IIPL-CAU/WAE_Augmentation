@@ -82,7 +82,7 @@ if __name__=='__main__':
                         help='Auto-encoder type; Default is WAE')
     parser.add_argument('--aug_tokenizer', default='T5', type=str, choices=['BERT', 'T5', 'spm', 'Bart'],
                         help='Tokenizer settings; Default is T5')
-    parser.add_argument('--aug_model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','Trasnformer'],
+    parser.add_argument('--aug_model_type', default='T5', type=str, choices=['BERT','T5', 'Bart','BERT+T5'],
                         help='Model settings; Default is T5')
     parser.add_argument('--aug_PLM_use', default=False, type=str2bool,
                         help='Model settings; Default is T5')

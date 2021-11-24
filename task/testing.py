@@ -72,9 +72,9 @@ def testing(args):
 
     # 2) Model load
     write_log(logger, "Loading models...")
-    save_name = f'{args.dataset}_{args.cls_model_type}_aug_{args.train_with_augmentation}_cls_checkpoint.pth.tar'
+    save_name = f'{args.dataset}_{args.cls_model_type}_aug_{args.train_with_augmentation}_PLM_{args.cls_PLM_use}_cls_checkpoint.pth.tar'
     if args.train_only_augmentation:
-        save_name = f'{args.dataset}_{args.cls_model_type}_only_aug_cls_checkpoint.pth.tar'
+        save_name = f'{args.dataset}_{args.cls_model_type}_only_aug_PLM_{args.cls_PLM_use}_cls_checkpoint.pth.tar'
     checkpoint = torch.load(os.path.join(args.save_path, save_name), map_location='cpu')
     model.load_state_dict(checkpoint['model'])
     model = model.eval()
