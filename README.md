@@ -1,5 +1,30 @@
 # Text Style Transfer & Augmentation with WAE (Wasserstein Auto-Encoder)
 
+Official implementation of "Generative Data Augmentation via Wasserstein Autoencoder for Text Classification". (ICTC 2022)
+
+https://ieeexplore.ieee.org/document/9952762/
+
+### Dependencies
+
+This code is written in Python. Dependencies include
+
+* Python == 3.6
+* PyTorch == 1.8
+* Transformers (Huggingface) == 4.8.1
+
+### Usable Data
+['IMDB', 'Yelp_Full', 'DBpedia', 'AG_News', 'SST2', 'SST5', 'ProsCons', 'SUBJ', 'TREC', 'MR']
+* IMDB **Sentiment Analysis** (--dataset=IMDB)
+* Yelp Open **Reveiw Classification** (--dataset=Yelp_Full)
+* DBpedia **Query Relationship Analysis** (--dataset=DBpedia)
+* AG News **Topic Classification** (--dataset=AG_News)
+* SST2 **Sentiment Analysis** (--dataset=SST2)
+* SST5 **Sentiment Analysis** (--dataset=SST5)
+* ProsCons **Sentiment Analysis** (--dataset=ProsCons)
+* Subjectivity **Sentiment Analysis** (--dataset=SUBJ)
+* Text REtrieval Conference **Question Classification** (--dataset=TREC)
+* Movie Review **Sentiment Analysis** (--dataset=MR)
+
 ### Pre-processing
 
 ```

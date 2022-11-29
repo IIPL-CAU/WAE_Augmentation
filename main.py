@@ -3,10 +3,10 @@ from time import time
 
 # Import custom modules
 from task.preprocessing import preprocessing
-from task.augment_training import augment_training
-from task.augmentation import augmentation
-from task.training import training
-from task.testing import testing
+from task.classification.augment_training import augment_training
+from task.classification.augmentation import augmentation
+from task.classification.training import training
+from task.classification.testing import testing
 from utils import str2bool, path_check
 
 def main(args):
@@ -18,20 +18,25 @@ def main(args):
     total_start_time = time()
 
     # Task run
-    if args.preprocessing:
-        preprocessing(args)
+    if args.task == 'CLS':
+        if args.preprocessing:
+            preprocessing(args)
 
-    if args.augment_training:
-        augment_training(args)
+        if args.augment_training:
+            augment_training(args)
 
-    if args.augmentation:
-        augmentation(args)
+        if args.augmentation:
+            augmentation(args)
 
-    if args.training:
-        training(args)
+        if args.training:
+            training(args)
 
-    if args.testing:
-        testing(args)
+        if args.testing:
+            testing(args)
+
+    if args.task == 'NMT':
+        if args.preprocessing:
+            preprocessing(args)
 
     # Time calculate
     print(f'Done! ; {round((time()-total_start_time)/60, 3)}min spend')
@@ -39,6 +44,7 @@ def main(args):
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Parsing Method')
     # Task setting
+    parser.add_argument('--task', default='NMT', type=str, choices=['NMT', 'CLS'])
     parser.add_argument('--preprocessing', action='store_true')
     parser.add_argument('--augment_training', action='store_true')
     parser.add_argument('--augmentation', action='store_true')
