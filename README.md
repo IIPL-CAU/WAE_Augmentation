@@ -1,4 +1,4 @@
-# Text Style Transfer & Augmentation with WAE (Wasserstein Auto-Encoder)
+# Text Augmentation with WAE (Wasserstein Auto-Encoder)
 
 Official implementation of "Generative Data Augmentation via Wasserstein Autoencoder for Text Classification". (ICTC 2022)
 
