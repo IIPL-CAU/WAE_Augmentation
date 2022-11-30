@@ -4,6 +4,8 @@ Official implementation of "Generative Data Augmentation via Wasserstein Autoenc
 
 https://ieeexplore.ieee.org/document/9952762/
 
+<img src="./image/fig1_red.jpg">
+
 ### Dependencies
 
 This code is written in Python. Dependencies include
